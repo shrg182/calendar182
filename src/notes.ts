@@ -54,3 +54,65 @@ export async function exportBackup(){
     tx.onabort=()=>reject(tx.error||new Error('Could not export backup.'))
   })
 }
+
+export interface ImportData {notes:Note[];history:Note[]}
+function object(value:unknown):Record<string,unknown>{
+  if(!value || typeof value!=='object' || Array.isArray(value))throw new Error('Invalid backup record.')
+  return value as Record<string,unknown>
+}
+export function parseBackup(value:unknown):ImportData{
+  const data=object(value),legacy=data.app==='daymark'
+  if((!legacy && data.app!=='calendar182')||data.version!==1||!Array.isArray(data.notes))throw new Error('Choose a Calendar182 or Daymark version 1 backup.')
+  function records(raw:unknown):Note[]{
+    if(!Array.isArray(raw)||raw.length>100000)throw new Error('Invalid or oversized backup.')
+    return raw.map(value=>{
+      const item=object(value)
+      const date=item.date,text=item.text,deleted=legacy?false:item.deleted
+      if(typeof date!=='string'||typeof text!=='string'||typeof deleted!=='boolean')throw new Error('Invalid note.')
+      const parsed=new Date(`${date}T12:00:00Z`)
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==date||date<'1901-01-01'||date>'2100-12-31')throw new Error('Invalid note date.')
+      if(text.length>20000||(!deleted&&!text.trim())||(deleted&&text!==''))throw new Error('Invalid note text.')
+      if(typeof item.createdAt!=='string'||typeof item.updatedAt!=='string'||!Number.isFinite(Date.parse(item.createdAt))||!Number.isFinite(Date.parse(item.updatedAt)))throw new Error('Invalid note timestamp.')
+      const operationId=legacy?crypto.randomUUID():item.operationId
+      if(typeof operationId!=='string'||!operationId.length||operationId.length>128)throw new Error('Invalid operation ID.')
+      return {date,text,deleted,createdAt:item.createdAt,updatedAt:item.updatedAt,operationId}
+    })
+  }
+  const notes=records(data.notes)
+  if(new Set(notes.map(note=>note.date)).size!==notes.length)throw new Error('Duplicate note dates. Nothing was imported.')
+  const history=legacy?[]:[...records(data.history),...records(data.outbox)]
+  const versions=new Map<string,Note>()
+  for(const note of [...notes,...history]){
+    const prior=versions.get(note.operationId)
+    if(prior&&JSON.stringify(prior)!==JSON.stringify(note))throw new Error('Conflicting backup versions.')
+    versions.set(note.operationId,note)
+  }
+  return {notes,history:[...versions.values()]}
+}
+export async function importNotes(data:ImportData,replace=false):Promise<number>{
+  const db=await open()
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(['notes','history','outbox'],'readwrite')
+    const notes=tx.objectStore('notes'),history=tx.objectStore('history'),outbox=tx.objectStore('outbox')
+    const existingHistory=history.getAll(),existingNotes=notes.getAll()
+    let count=0
+    existingNotes.onsuccess=()=>{
+      const current=new Map<string,Note>(existingNotes.result.map((note:Note)=>[note.date,note]))
+      const versions=new Map<string,Note>([...existingHistory.result,...existingNotes.result].map((note:Note)=>[note.operationId,note]))
+      for(const imported of data.history){
+        const old=versions.get(imported.operationId)
+        if(old && (old.date!==imported.date||old.text!==imported.text||old.deleted!==imported.deleted||old.createdAt!==imported.createdAt||old.updatedAt!==imported.updatedAt)){tx.abort();return}
+        history.put(imported)
+      }
+      for(const imported of data.notes){
+        const previous=current.get(imported.date)
+        if(previous&&!replace)continue
+        if(previous)history.put(previous)
+        const note={...imported,operationId:crypto.randomUUID(),updatedAt:new Date().toISOString()}
+        notes.put(note);outbox.put(note);count++
+      }
+    }
+    tx.oncomplete=()=>resolve(count)
+    tx.onabort=()=>reject(tx.error||new Error('Import cancelled. No changes were saved.'))
+  })
+}

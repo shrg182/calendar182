@@ -30,3 +30,11 @@ Implemented isolated IndexedDB `calendar182.notes.v1`: notes keyed by Gregorian 
 JSON export reads all stores in one transaction and includes notes, deleted records, previous versions and operations. Export does not include unsaved drafts. No restore/import UI, account isolation or sync provider is implemented. Notes remain local to this origin/browser profile; concurrent tabs do not refresh each other’s in-memory snapshots yet. History and operations currently have no automatic pruning. These are development limitations, not release acceptance.
 
 Passed: lint, typecheck, 8 unit/storage tests and build. Chrome notes smoke passed: drafts through Settings, save/reload, markers, injected transaction failure preserving draft, successful retry, downloaded backup including prior version and operations, delete/reload, phone overflow. Tests use isolated browser contexts and synthetic notes, not user data. IndexedDB tests use fake-indexeddb. The schema was not changed after publication of any note-enabled build.
+
+## Backup import update
+
+Added Settings file upload (25 MB limit), strict format/version/date/text/timestamp validation, duplicate date and conflicting operation-ID checks, conflict/deletion preview, keep-existing default, explicit replace choice and cancel. All in-page drafts must be saved before import. Accepts existing Daymark version 1 note backups and Calendar182 version 1 full backups.
+
+One transaction retains incoming saved versions and local superseded notes, writes imported current notes/deletions and creates fresh ordered local operations. Source outbox entries are retained as historical versions, not replayed as remote writes. Keep-existing also keeps local tombstones. Import only merges dates represented by the file; it never clears unrelated local notes. Retained versions are currently accessible through exported JSON, not a history browsing UI.
+
+Passed: 12 unit/storage tests including malformed backups, keep/replace, full backup deletion restoration, legacy compatibility, history retention and atomic rollback on operation-ID collision. Chrome upload smoke passed: draft guard, preview/conflict count, keep default, replacement, reload persistence, rejection of duplicate dates and mobile layout. Lint/typecheck/build also pass. Older paragraphs above describe previous development stages.

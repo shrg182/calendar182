@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react'
-import {readNotes,saveNote,exportBackup} from './notes'
-import type {Note} from './notes'
+import {readNotes,saveNote,exportBackup,importNotes} from './notes'
+import type {ImportData,Note} from './notes'
 export function useNotes(){
   const [notes,setNotes]=useState<Record<string,Note>>({})
   const [drafts,setDrafts]=useState<Record<string,string>>({})
@@ -42,5 +42,17 @@ export function useNotes(){
     }catch{setStatus('Could not export backup. Please retry.')}
     finally{setBusy(false)}
   }
-  return {notes,drafts,ready,busy,status,dirty,edit,save,backup}
+  async function restore(data:ImportData,replace:boolean){
+    if(busy||!ready||dirty)throw new Error('Save all drafts before importing.')
+    setBusy(true)
+    try{
+      const count=await importNotes(data,replace)
+      const rows=await readNotes()
+      setNotes(Object.fromEntries(rows.map(note=>[note.date,note])))
+      setDrafts({})
+      setStatus(`${count} notes imported on this device.`)
+    }catch(error){setStatus('Could not complete import. Reload to check saved notes.');throw error}
+    finally{setBusy(false)}
+  }
+  return {notes,drafts,ready,busy,status,dirty,edit,save,backup,restore}
 }
