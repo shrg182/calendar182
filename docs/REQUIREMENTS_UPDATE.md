@@ -1,6 +1,6 @@
 # Calendar requirements update
 
-Date: 2026-11-16  
+Date: 2026-11-16
 Basis: Product-owner clarification following the design review.
 
 This document supersedes earlier review suggestions to defer all synchronization until after the initial release. Original design files remain unchanged. Implementation details below are proposals unless explicitly identified as owner requirements.
