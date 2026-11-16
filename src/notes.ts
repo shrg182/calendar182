@@ -116,3 +116,12 @@ export async function importNotes(data:ImportData,replace=false):Promise<number>
     tx.onabort=()=>reject(tx.error||new Error('Import cancelled. No changes were saved.'))
   })
 }
+
+export async function readNoteHistory(date:string):Promise<Note[]>{
+  const db=await open()
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('history','readonly'),request=tx.objectStore('history').getAll()
+    tx.oncomplete=()=>resolve((request.result as Note[]).filter(note=>note.date===date&&!note.deleted).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)))
+    tx.onabort=()=>reject(tx.error||new Error('Could not read note history.'))
+  })
+}

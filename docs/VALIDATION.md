@@ -38,3 +38,9 @@ Added Settings file upload (25 MB limit), strict format/version/date/text/timest
 One transaction retains incoming saved versions and local superseded notes, writes imported current notes/deletions and creates fresh ordered local operations. Source outbox entries are retained as historical versions, not replayed as remote writes. Keep-existing also keeps local tombstones. Import only merges dates represented by the file; it never clears unrelated local notes. Retained versions are currently accessible through exported JSON, not a history browsing UI.
 
 Passed: 12 unit/storage tests including malformed backups, keep/replace, full backup deletion restoration, legacy compatibility, history retention and atomic rollback on operation-ID collision. Chrome upload smoke passed: draft guard, preview/conflict count, keep default, replacement, reload persistence, rejection of duplicate dates and mobile layout. Lint/typecheck/build also pass. Older paragraphs above describe previous development stages.
+
+## Note history recovery
+
+Added collapsible Note history under the daily editor. Versions are loaded on demand, filtered by civil date, and displayed as plain text with saved timestamps. Use this version copies text into the draft, never directly into saved storage. A different unsaved draft requires confirmation before replacement. Explicit Save retains the previously current version and creates a fresh local operation. Deleted notes can be recovered from their nondeleted saved versions. Imported retained history is included.
+
+Passed: lint/typecheck/build, existing 12 unit/storage tests, and Chrome recovery test covering preview, unsaved restoration discarded on reload, draft replacement cancellation/acceptance, explicit Save, deleted-note recovery, reload persistence and phone overflow. No automatic sync or cloud provider was added. History is local and remains subject to browser storage clearing; export independent backups.
