@@ -44,3 +44,7 @@ Passed: 12 unit/storage tests including malformed backups, keep/replace, full ba
 Added collapsible Note history under the daily editor. Versions are loaded on demand, filtered by civil date, and displayed as plain text with saved timestamps. Use this version copies text into the draft, never directly into saved storage. A different unsaved draft requires confirmation before replacement. Explicit Save retains the previously current version and creates a fresh local operation. Deleted notes can be recovered from their nondeleted saved versions. Imported retained history is included.
 
 Passed: lint/typecheck/build, existing 12 unit/storage tests, and Chrome recovery test covering preview, unsaved restoration discarded on reload, draft replacement cancellation/acceptance, explicit Save, deleted-note recovery, reload persistence and phone overflow. No automatic sync or cloud provider was added. History is local and remains subject to browser storage clearing; export independent backups.
+
+## Find date
+
+Added an accessible native date input and Show date action below the calendar, constrained to 1901–2100. Submission uses civil components to select the day and open its month. In-page drafts remain stored during navigation. Lint/typecheck/build and Chrome checks passed for leap day, both range edges, disabled forward navigation at December 2100, and no overflow at 320/390/1280px.

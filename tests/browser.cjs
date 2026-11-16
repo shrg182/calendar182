@@ -23,6 +23,17 @@ const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
   await page.screenshot({path:'/tmp/calendar182-mobile.png',fullPage:true});
   await page.setViewportSize({width:1280,height:900});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  for (const key of ['2024-02-29','1901-01-01','2100-12-31']) {
+   await page.getByLabel('Find date',{exact:true}).fill(key);
+   await page.getByRole('button',{name:'Show date',exact:true}).click();
+   const [year,month,day]=key.split('-').map(Number);
+   assert.equal(await page.locator('.details h2').textContent(),new Intl.DateTimeFormat('en-US',{dateStyle:'full'}).format(new Date(year,month-1,day,12)));
+  }
+  assert.equal(await page.getByRole('button',{name:'Next month',exact:true}).isDisabled(),true);
+  for (const width of [320,390,1280]) {
+   await page.setViewportSize({width,height:900});
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  }
   assert.deepEqual(errors,[]);
   console.log('PASS: production subpath, month navigation, today, details, settings, mobile/desktop overflow, no browser errors');
  } finally {await browser.close()}
