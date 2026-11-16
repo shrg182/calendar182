@@ -1,6 +1,6 @@
 # Calendar architecture and current status
 
-The development preview uses React, TypeScript and Vite. `src/calendar.ts` supplies civil-date keys, Sunday-first month cells and lunar-javascript lunar/solar-term labels using civil components in the UTC+8 reference. `src/App.tsx` renders month navigation, selected-day details and a settings overview. No account, note store or sync provider exists yet. No original app credentials or data were copied.
+The development preview uses React, TypeScript and Vite. `src/calendar.ts` supplies civil-date keys, Sunday-first month cells and lunar-javascript lunar/solar-term labels using civil components in the UTC+8 reference. `src/App.tsx` renders month navigation, selected-day details and a settings overview. `src/notes.ts` now stores notes, history and an ordered durable outbox in a dedicated IndexedDB database. No account or sync provider exists yet. No original app credentials or data were copied.
 
 Target architecture: UI → application services → deterministic calendar/Shensha engines and IndexedDB. Notes and versioned Shensha settings will commit atomically with an outbox operation. A provider-independent sync engine will use accepted server revisions, operation IDs, incremental reads and retained recovery history. Unsaved editor drafts must remain separate from remote canonical records. The first product release requires tested automatic sync; a local-only preview is not that release.
 

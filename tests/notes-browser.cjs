@@ -1,0 +1,47 @@
+const assert=require('node:assert/strict');
+const {readFileSync}=require('node:fs');
+const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
+(async()=>{
+ const browser=await chromium.launch({channel:'chrome',headless:true});
+ try{
+  const page=await browser.newPage({viewport:{width:390,height:844},acceptDownloads:true});
+  await page.goto('http://127.0.0.1:4173/calendar182/');
+  await page.locator('.date').first().click();
+  const editor=page.getByRole('textbox',{name:'Daily note'});
+  await editor.fill('Browser persistence test\n第二行');
+  await page.getByRole('button',{name:'Settings',exact:true}).click();
+  await page.getByRole('button',{name:'Back to calendar',exact:true}).click();
+  assert.equal(await editor.inputValue(),'Browser persistence test\n第二行');
+  await page.getByRole('button',{name:'Save note',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'Saved on this device.'}).waitFor();
+  await page.reload();await page.locator('.date').first().click();
+  assert.equal(await editor.inputValue(),'Browser persistence test\n第二行');
+  assert.equal(await page.locator('.note-dot').count(),1);
+  await page.evaluate(()=>{window.originalTransaction=IDBDatabase.prototype.transaction;IDBDatabase.prototype.transaction=function(...args){if(args[1]==='readwrite')throw new DOMException('Test storage failure','QuotaExceededError');return window.originalTransaction.apply(this,args)}});
+  await editor.fill('Keep this failed-save draft');
+  await page.getByRole('button',{name:'Save note',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'Could not save.'}).waitFor();
+  assert.equal(await editor.inputValue(),'Keep this failed-save draft');
+  await page.evaluate(()=>{IDBDatabase.prototype.transaction=window.originalTransaction});
+  await page.getByRole('button',{name:'Save note',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'Saved on this device.'}).waitFor();
+  await page.getByRole('button',{name:'Settings',exact:true}).click();
+  const downloadPromise=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export notes backup',exact:true}).click();
+  const download=await downloadPromise;
+  const backup=JSON.parse(readFileSync(await download.path(),'utf8'));
+  assert.equal(backup.notes[0].text,'Keep this failed-save draft');
+  assert.equal(backup.history[0].text,'Browser persistence test\n第二行');
+  assert.equal(backup.outbox.length,2);
+  await page.getByRole('button',{name:'Back to calendar',exact:true}).click();
+  page.once('dialog',dialog=>dialog.accept());
+  await page.getByRole('button',{name:'Delete note',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'Deleted on this device.'}).waitFor();
+  assert.equal(await editor.inputValue(),'');
+  assert.equal(await page.locator('.note-dot').count(),0);
+  await page.reload();await page.locator('.date').first().click();
+  assert.equal(await editor.inputValue(),'');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  console.log('PASS: draft navigation, save/reload, markers, save failure, retry, backup/history, delete/reload, mobile layout');
+ }finally{await browser.close()}
+})().catch(error=>{console.error(error);process.exit(1)});

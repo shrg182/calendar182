@@ -22,3 +22,11 @@ Fixture sources (retrieved 2026-11-16):
 - Library: https://github.com/6tail/lunar-javascript
 
 The HKO fixture contains factual dates and labels; source prose is not reproduced. The reference calculation-conventions document describes the old app, not the new label engine.
+
+## Local daily notes
+
+Implemented isolated IndexedDB `calendar182.notes.v1`: notes keyed by Gregorian civil date; per-save UUID; history; ordered auto-increment outbox with unique operation IDs. Note update, superseded version and outbox entry share one transaction. Delete writes a tombstone and retains prior text in history. Explicit Save/Delete; 20,000-character limit; saved-note markers; drafts survive in-page date/settings navigation. A beforeunload handler warns on unsaved drafts or active operations; browser delivery of that warning is not a persistence guarantee.
+
+JSON export reads all stores in one transaction and includes notes, deleted records, previous versions and operations. Export does not include unsaved drafts. No restore/import UI, account isolation or sync provider is implemented. Notes remain local to this origin/browser profile; concurrent tabs do not refresh each other’s in-memory snapshots yet. History and operations currently have no automatic pruning. These are development limitations, not release acceptance.
+
+Passed: lint, typecheck, 8 unit/storage tests and build. Chrome notes smoke passed: drafts through Settings, save/reload, markers, injected transaction failure preserving draft, successful retry, downloaded backup including prior version and operations, delete/reload, phone overflow. Tests use isolated browser contexts and synthetic notes, not user data. IndexedDB tests use fake-indexeddb. The schema was not changed after publication of any note-enabled build.
