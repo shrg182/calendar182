@@ -48,3 +48,7 @@ Passed: lint/typecheck/build, existing 12 unit/storage tests, and Chrome recover
 ## Find date
 
 Added an accessible native date input and Show date action below the calendar, constrained to 1901–2100. Submission uses civil components to select the day and open its month. In-page drafts remain stored during navigation. Lint/typecheck/build and Chrome checks passed for leap day, both range edges, disabled forward navigation at December 2100, and no overflow at 320/390/1280px.
+
+## Saved-note search
+
+Added Settings → Search saved notes. Search is case-insensitive over local saved text, excludes deleted notes and unsaved drafts, displays up to 20 newest-date results with a total count, and opens the selected date. Snippets render as plain text. Passed lint/build+typecheck and Chrome notes regression including search/open followed by backup and delete checks.
