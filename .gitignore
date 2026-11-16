@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Isolated sync prototype: never commit test credentials, database or sessions
+prototype/sync/.data/
+__pycache__/

@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Calendar sync experiment</title><link rel="stylesheet" href="/style.css"><script type="module" src="/client.js"></script></head>
+<body><main><h1>Calendar sync experiment</h1><p>Test notes only. This separate experiment does not access your Calendar182 notes.</p>
+<form id="login"><label>Test account<select id="account" aria-label="Test account"><option>account-a</option><option>account-b</option></select></label><label>Test token<input id="token" type="password" required autocomplete="off"></label><button>Connect</button></form>
+<section id="workspace" hidden><h2 id="identity"></h2><label><input type="checkbox" id="automatic" checked> Automatic sync while this page is open</label><div class="actions"><button id="sync">Sync now</button><button id="export">Export test data</button></div>
+<label>Date<input id="date" type="date" min="1901-01-01" max="2100-12-31" required></label><label>Test note<textarea id="note" rows="6" maxlength="20000"></textarea></label><div class="actions"><button id="save">Save on this device</button><button id="delete">Delete test note</button></div><p id="draft-notice"></p><p id="pending"></p>
+<details><summary>Saved test notes</summary><ul id="records"></ul></details><details id="history-panel"><summary>Recovery history</summary><button id="history-refresh">Refresh history</button><ul id="history"></ul></details><details><summary>Payload diagnostics</summary><output id="metrics"></output><p>Counts JSON bodies, excluding HTTP headers, TLS and other transport overhead.</p></details>
+</section><p role="status" id="status">Enter generated test credentials to begin.</p></main></body></html>
