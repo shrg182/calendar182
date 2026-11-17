@@ -1,6 +1,6 @@
 # Calendar staging: physical-device acceptance
 
-Prepared 2026-11-17 (America/Detroit). Status: guided computer/iPad Chrome sequence passed by owner report; limits and untested scenarios are listed below.
+Prepared 2026-11-17 (America/Detroit). Status: guided computer/iPad Chrome sequence and in-page session-recovery check passed by owner report; limits and untested scenarios are listed below.
 
 Devices exercised in this integrated Calendar sequence: computer and iPad using Chrome. Exact iPad model, operating system and browser versions were not recorded. Xiaomi 13/Chrome was planned but not exercised in this sequence; its earlier results cover the separate standalone sync editor. Use one tab per browser profile on the same trusted home network and synthetic notes only.
 
@@ -27,6 +27,7 @@ Record owner observations individually; automated Chrome contexts are separate e
 | Unsaved draft during selection | Draft survives local/computer selection without uploading; explicit Save uploads it | Passed by owner report |
 | Delete and recover | Deletion propagates; Note history → Use this version → Save note restores and synchronizes | Passed by owner report |
 | Offline save/reconnect | iPad saves while disconnected, computer stays unchanged, then receives edit after reconnection | Passed by owner report |
+| In-page sign-in recovery | Draft survives expired sign-in and reconnection without reload; only explicit Save uploads it | Passed by owner report on implementation 224d8fc |
 
 Automatic mode syncs after saves/reconnection/focus and polls roughly every 15 seconds while visible. Allow up to 20 seconds for a receiving foreground device, or use Sync now when enabled. Selecting This device pauses both manual and automatic note synchronization. An offline page reload is not part of this checklist: the app shell is not yet available offline.
 
@@ -81,3 +82,17 @@ Following instructions to keep Calendar open with Your computer selected, discon
 ## Completed sequence and limits
 
 All checks in the guided computer/iPad sequence above passed by owner report. These are human observations, separate from automated Chrome tests. Incoming computer edits while iPad is paused, explicit disabled-control confirmation, competing offline edits, lost acknowledgements, account isolation, integrated-Calendar service restart, offline app-shell reload, other iPad browsers and Xiaomi acceptance were not physically exercised in this sequence. Some protocol scenarios have independent automated coverage; that does not replace these physical checks. Production authentication, cloud migration and general multi-tab consistency remain unfinished.
+
+## In-progress physical session-recovery check — 2026-11-17
+
+Implementation: 224d8fc. Owner prepared an unsaved "Reconnect draft test" on iPad with computer mode and automatic sync enabled, then replied Ready. Expired five active account-a sessions in the isolated staging service; accepted note operation count was unchanged. Owner confirmed the Reconnect same account form appeared and, on inspection without reload, the note text was unchanged. This establishes owner-reported form appearance and unsaved-draft retention after actual test-session expiry. Reauthentication and subsequent recovery are not yet confirmed. Both devices' account-a sessions were expired deliberately; computer may also require reconnection.
+
+## iPad reauthentication retained draft — 2026-11-17
+
+Owner confirmed the reconnect form disappeared after entering the account-a token and tapping Reconnect same account, while note contents remained unchanged. Record as successful owner-reported same-account reauthentication without reload and preservation of the unsaved draft. Implicit draft non-upload and explicit post-reconnect Save convergence still require observation; the computer also needs to reconnect because its account-a session was deliberately expired.
+
+## Physical session-recovery sequence complete — 2026-11-17
+
+After reconnecting the computer, the owner confirmed it still showed the previously saved text, excluding the unsaved iPad draft. Then, instructed to explicitly Save note on iPad and check for "Reconnect draft test" on the computer, the owner reported "It works as expected."
+
+The guided recovery sequence on implementation 224d8fc passed by owner report: actual staging sign-in expiry, reconnect form appearance, unsaved draft retained before/after same-account reauthentication without reload, computer reauthentication with no implicit draft upload, and explicit post-reconnect Save convergence. Wrong-token handling and reconnecting in local-only mode have automated coverage but were not physically tested in this sequence. Exact OS/browser versions and timings remain unrecorded. Earlier in-progress statements above describe intermediate checkpoints.
