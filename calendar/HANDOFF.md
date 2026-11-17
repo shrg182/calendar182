@@ -6,12 +6,12 @@ Updated: 2026-11-17 (America/Detroit). User last reported 2% quota remaining. Th
 
 - The owner decided external cloud storage and a hosted backend are not required at this stage if the current computer-hosted sync meets their needs. Cloudflare/D1 remains an isolated feasibility experiment; do not resume cloud provisioning or identity-provider selection as the default next task.
 - The owner subsequently requested that users choose their storage provider and be able to switch later. This is an application requirement, not selection of a particular provider. Keep the free-services-only constraint.
-- Storage groundwork and an isolated Calendar/computer-sync integration are implemented locally on `sync-prototype`, based on commit `71e2db4`; the working changes are uncommitted and have not been deployed publicly. Preserve them.
-- Ordinary Calendar remains local-only. The isolated staging Calendar now enables Settings → This device (pause sync) and Your computer (resume sync), with a per-account durable selection. OneDrive, Google Drive and Dropbox remain unavailable. Existing phone/computer physical-device results apply to the standalone editor; the Calendar integration has automated browser coverage.
+- Storage groundwork, isolated Calendar/computer-sync integration and durable local/computer selection were committed and pushed to `sync-prototype` as `bd6b737`. This documentation update records subsequent physical-device tests; the implementation is unchanged. No public application deployment was changed.
+- Ordinary Calendar remains local-only. The isolated staging Calendar now enables Settings → This device (pause sync) and Your computer (resume sync), with a per-account durable selection. OneDrive, Google Drive and Dropbox remain unavailable. The integrated Calendar now has automated coverage plus owner-reported computer/iPad Chrome results; older Xiaomi results apply to the standalone editor.
 - `src/storage.ts` defines the common local NoteStore interface and provider availability registry; `src/StorageSettings.tsx` renders the panel. `src/useNotes.ts` and `src/NoteHistory.tsx` use that interface. `src/App.tsx` and `src/App.css` include the new panel and styling. Existing IndexedDB data and its database name are preserved.
-- `docs/STORAGE_OPTIONS.md` records the remaining requirements: connect providers, show their roles, preview destination data, copy and verify before activation, preserve notes/history/tombstones/pending edits, recover from interrupted transfers, isolate accounts, coordinate tabs, and retain the old provider's data until explicit deletion. No cloud connector or actual switching/migration is implemented. Do not describe the selection panel as finished provider switching.
-- Validation after implementation: lint, TypeScript, all 13 tests (including `tests/storage.test.ts`), production build and whitespace check passed. The existing large-bundle warning remains. The panel subsequently passed Chrome browser checks and mobile screenshot inspection on 2026-11-17 (see the update below).
-- Next work: review the isolated Calendar computer-sync build, including local/computer selection, and repeat phone/computer acceptance with this UI (the earlier physical-device results covered the standalone editor). Safe provider switching, production account handling, offline installation and multi-tab consistency remain unfinished. A cloud connector requires choosing the first provider; no such choice has been made. Keep the public Calendar and original Health Calendar unchanged unless further authorized.
+- `docs/STORAGE_OPTIONS.md` records the remaining requirements: connect providers, show their roles, preview destination data, copy and verify before activation, preserve notes/history/tombstones/pending edits, recover from interrupted transfers, isolate accounts, coordinate tabs, and retain the old provider's data until explicit deletion. Local/computer sync-mode selection is implemented in staging; cloud connectors and provider-to-provider migration are not. Do not describe local/computer selection as finished cloud switching.
+- Latest implementation validation: lint, TypeScript, all 15 application tests, seven Python service tests, ordinary/staging builds and browser suites passed. The existing large-bundle warning remains. The panel subsequently passed Chrome browser checks and mobile screenshot inspection on 2026-11-17 (see the update below).
+- The guided computer/iPad Chrome sequence is complete by owner report: bidirectional edits, pause, paused online reload, resume, unsaved-draft preservation/explicit save, deletion/recovery and offline save/reconnect. See `docs/COMPUTER_SYNC_ACCEPTANCE.md` for precise limits. Integrated Xiaomi testing and production session recovery, offline installation, multi-tab consistency and cloud migration remain unfinished. Next choose the next implementation priority after preserving this physical-test documentation on sync-prototype; do not repeat completed guided checks by default. Keep the public Calendar and original Health Calendar unchanged unless further authorized.
 
 Later sections preserve earlier work and evidence; this current stopping point supersedes older next-step recommendations to proceed with hosted deployment/authentication.
 
@@ -200,3 +200,53 @@ Owner asked to proceed and confirmed Chrome on the Xiaomi 13. Prepared physical-
 Confirmed computer Wi-Fi IP `192.168.68.58`. Restarted only the port-8791 staging service with `--host 0.0.0.0 --allow-host 192.168.68.58 --port 8791 --data-dir prototype/sync/.data/calendar-stage --calendar-dist prototype/sync/calendar-dist`. The existing staging data directory and credentials were preserved; port 8790 was untouched. LAN and loopback Calendar URLs returned HTTP 200. Service is a session-local process, not installed autostart.
 
 Use `http://192.168.68.58:8791/calendar/` on both the computer and phone, account-a with its private staging token. Different origin from loopback/public Calendar means separate browser storage; do not call missing loopback notes data loss. Use fake notes, one tab per profile, same home network and an awake computer. Next user-facing step: open/login on both devices, save a synthetic computer note on 2026-11-17 and confirm it reaches the phone. Then run the remaining checklist incrementally. Record actual owner observations; never mark physical acceptance complete from automated checks or an HTTP 200 alone.
+
+## iPad Chrome reachability — 2026-11-17
+
+Owner reported port 8790 was unreachable on iPad Chrome. Inspection found no listener on 8790 and a LAN listener on 8791. Computer Wi-Fi remained `192.168.68.58`; current Calendar returned HTTP 200 at both loopback and LAN URLs. After using `http://192.168.68.58:8791/calendar/`, the owner confirmed "It works." Record as iPad Chrome page reachability only; sign-in, note sync, pause/resume and Xiaomi checks remain pending. Next: sign in as account-a on both devices, save a synthetic note on the computer and confirm it appears on iPad.
+
+## Computer-to-iPad sync observation — 2026-11-17
+
+After the account-a computer/iPad sign-in and computer-save instructions ("Computer test 1", 2026-11-17), the owner reported "It works as expected." Computer-to-iPad saved-note synchronization is therefore owner-reported successful for the integrated Calendar on port 8791, using iPad Chrome. Reverse iPad-to-computer edits, pause/resume, draft/recovery and Xiaomi acceptance remain pending. Next instruction: edit/save the same date on iPad, then verify it appears on the computer. Updates since commit bd6b737 are local documentation changes unless separately committed.
+
+## Bidirectional iPad sync observation — 2026-11-17
+
+Owner confirmed "It works as expected" after editing/saving "iPad test 2" for 2026-11-17 on iPad and checking the computer. Combined with the preceding report, integrated Calendar computer↔iPad Chrome saved-note synchronization is owner-reported successful. Do not mark all physical acceptance complete. Next: on iPad choose Settings → This device, save "iPad paused test 3", verify the computer stays at "iPad test 2"; then test paused reload and resume incrementally.
+
+## iPad pause observation — 2026-11-17
+
+Owner reported that after the instructed iPad local-mode save and a 20-second wait, the computer stayed unchanged. Paused non-propagation is owner-reported successful; exact iPad saved text and disabled control were not separately reconfirmed. Next: reload iPad while connected, confirm Settings still selects This device and 2026-11-17 still shows "iPad paused test 3", with the computer unchanged. Resume is not tested yet.
+
+## iPad paused reload observation — 2026-11-17
+
+Owner confirmed that reloading iPad Calendar retained This device selection and the unchanged November 17 note; computer remained unchanged. Online reload persistence and continued non-propagation while paused are owner-reported successful. Next: iPad Settings → Your computer, then verify the saved paused note reaches the computer within approximately 20 seconds. Resume and remaining physical scenarios are still pending.
+
+## iPad resume observation — 2026-11-17
+
+Owner reported that after selecting Your computer on iPad, the computer quickly showed the updated iPad text. Physical local/computer mode acceptance now covers bidirectional computer↔iPad Chrome saved edits, pausing with no propagation, online reload retaining selection/note and successful pending upload on resume. This does not establish all remaining scenarios or Xiaomi acceptance. Next: test an unsaved draft surviving Settings/local-computer selection, followed by explicit Save and convergence. Documentation changes since bd6b737 remain uncommitted unless subsequently saved by the owner.
+
+## iPad draft preservation observation — 2026-11-17
+
+Owner answered yes to the draft-preservation check after switching This device → Your computer: iPad unsaved text remained and computer saved text was unchanged. Storage selection therefore did not implicitly save/upload the draft. Next: explicitly Save note on iPad (Your computer selected) and verify the computer receives "Unsaved draft test". Physical delete/recovery and offline save/reconnect remain pending.
+
+## iPad explicit draft save observation — 2026-11-17
+
+Owner confirmed "Unsaved draft test" appeared instantly on the computer after explicitly saving on iPad. Draft retention, no implicit upload during mode selection, and subsequent explicit-save convergence are owner-reported successful. Next: delete the synthetic November 17 note on iPad and confirm computer blanking; then separately recover via Note history → Use this version → Save note. Offline save/reconnect remains pending.
+
+## iPad deletion observation — 2026-11-17
+
+Owner initially erased editor contents and saw Save note disabled; explained that deleting a saved record requires Delete note and confirmation. In response to that instruction and computer-blanking check, owner reported "The computer changes quickly." Record as owner-reported deletion propagation, not completed history recovery. Next: on iPad open November 17 Note history, select "Unsaved draft test", Use this version, then Save note; confirm the computer receives the restored text.
+
+## iPad recovery observation — 2026-11-17
+
+Owner confirmed expected behavior after restoring "Unsaved draft test" through Note history → Use this version → Save note and checking the computer. Physical deletion/recovery with synchronized restoration is owner-reported successful. Next: with Your computer selected and the page already open, disconnect iPad Wi-Fi (ensure no alternate connection), save a synthetic offline edit, verify computer unchanged, then reconnect and confirm convergence. Do not reload offline: the app shell is not yet available offline.
+
+## Guided iPad sequence complete — 2026-11-17
+
+Owner reported "It works as expected" for offline save/reconnect: with the page open and Your computer selected, save "Offline iPad test" while disconnected, confirm computer unchanged, then reconnect and confirm computer receives it. The guided physical computer/iPad Chrome sequence is now complete by owner report. Consolidated checklist covers bidirectional edits, local-mode pause, paused online reload, resumption, unsaved draft retention/no implicit save, explicit Save propagation, deletion/recovery and offline save/reconnect. Do not generalize to production readiness, Xiaomi or offline app-shell reload. Precise untested details are in `docs/COMPUTER_SYNC_ACCEPTANCE.md`.
+
+Implementation commit `bd6b737` is on `sync-prototype` and tracks `origin/sync-prototype`. Physical-test documentation accumulated after that commit and is not yet committed/pushed. No implementation tests were rerun for these documentation-only observations.
+
+## Physical-test documentation repository update — 2026-11-17
+
+Owner authorized proceeding after the guided iPad sequence. This documentation-only update preserves the acceptance checklist, validation evidence and current handoff on sync-prototype. Implementation remains bd6b737; no code, credentials, test databases, main-branch files or public deployment were changed. Earlier entries describing uncommitted observations are historical. No application test rerun is needed for these documentation-only changes; whitespace and staged-file checks are the relevant verification.
