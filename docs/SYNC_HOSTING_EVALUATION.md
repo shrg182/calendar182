@@ -56,3 +56,7 @@ Implementation requirements:
 6. Run hosted tests for simultaneous saves, lost acknowledgements, outages, expired sessions, account isolation, backup restore, mobile lifecycle and reload. Repeat physical-device checks over separate networks with HTTPS.
 
 Provisioning is a subsequent step after provider, budget and region choices are concrete. This evaluation changes documentation only; it neither deploys the local prototype nor enables synchronization in the public Calendar.
+
+## Local feasibility result — 2026-11-16
+
+Implemented `prototype/cloudflare/` with an isolated pinned Miniflare dependency and nine passing local D1 runtime tests. Atomic writes, concurrent acceptance, immutable retry identity, pagination, account-scoped reads, rollback, injected storage failure and persistent local restart passed. See [prototype details](../prototype/cloudflare/README.md). Free identity-provider selection, browser integration, remote D1 behavior, quotas and regional reachability remain unverified. No public deployment or paid resource was created.

@@ -132,3 +132,7 @@ Separately, the owner confirmed that a note in the public Calendar survived relo
 ## Hosting evaluation update — 2026-11-16
 
 Physical-device test results were committed as `16ff8e3` on `sync-prototype`. See `docs/SYNC_HOSTING_EVALUATION.md` for the researched hosting/authentication shortlist, proposed same-origin HTTPS pilot, and integration prerequisites. The owner subsequently confirmed free services only. Workers Free + D1 Free is the current evaluation candidate; paid hosting is excluded. Provider selection, free authentication and required regions remain unresolved. No paid resource, external identity account or public sync deployment was created.
+
+## Workers/D1 feasibility update — 2026-11-16
+
+`prototype/cloudflare/` now contains a separate local API adapter, schema and nine passing Miniflare D1 runtime tests. Dependencies are isolated from the app; patched transitive dependency overrides installed with zero reported vulnerabilities. The API fails closed outside loopback test URLs and has no production authentication/deploy configuration. The LAN Python service and public Calendar are unchanged. See `prototype/cloudflare/README.md`; next work is free identity selection and synthetic browser integration, followed by remote free-tier verification.
