@@ -26,7 +26,7 @@ python3 prototype/sync/server.py --host 0.0.0.0 --allow-host YOUR_COMPUTER_LAN_I
 
 Replace the placeholder with the computer’s actual local IP address. Open `http://YOUR_COMPUTER_LAN_IP:8790/` on both devices using the same test account/token. Both must be on the same reachable network; the computer must stay awake and its firewall must permit that local connection. Use the LAN URL on the computer too, because a different URL has different browser storage. No router port forwarding or internet exposure is needed.
 
-This local test uses HTTP, without encryption or Secure cookies. Use fake notes only. Production hosting requires HTTPS and production authentication. iPhone/local-network browser behavior, real device reachability, and regional cloud reachability have **not** been tested. No network-wide listener was started during automated testing.
+This local test uses HTTP, without encryption or Secure cookies. Use fake notes only. Production hosting requires HTTPS and production authentication. Xiaomi 13 LAN reachability was confirmed by the owner on 2026-11-16 (see the physical-device update below). iPhone/local-network browser behavior and regional cloud reachability have **not** been tested. No network-wide listener was started during automated testing.
 
 ## Manual acceptance checklist
 
@@ -70,8 +70,24 @@ Verified on 2026-11-16:
 
 ## Remaining decisions before production
 
-This experiment tests a small dedicated sync-service approach. It does not validate OneDrive, another personal-drive provider, cloud costs or deployment. It is not integrated with the live app’s outbox or note history. Physical two-device checks remain outstanding.
+This experiment tests a small dedicated sync-service approach. It does not validate OneDrive, another personal-drive provider, cloud costs or deployment. It is not integrated with the live app’s outbox or note history. Initial physical two-device results are recorded below; remaining scenarios are still outstanding.
 
 Production still needs hosting/provider selection, HTTPS, normal user authentication and account recovery, rate limits/abuse protection, operational backups, retention and deletion policies, multi-tab coordination, browser/PWA lifecycle tests, full payload/schema hardening, session-expiry recovery UX, diagnostics without private content, and a two-physical-device acceptance record. A lost-ack test or an empty response measurement does not establish production readiness.
 
 References: [SQLite transaction control](https://docs.python.org/3/library/sqlite3.html#transaction-control), [IndexedDB transactions](https://developer.mozilla.org/en-US/docs/Web/API/IDBTransaction), [cookie attributes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie).
+
+## Physical-device test update — 2026-11-16
+
+Owner-reported manual results using a Xiaomi 13 and computer on the same LAN, account-a, and the isolated sync experiment at `http://192.168.68.58:8790/`:
+
+- Phone-to-computer and computer-to-phone saved edits received successfully.
+- Phone offline save followed by reconnection synchronized successfully.
+- An unsaved phone draft remained intact when a computer change downloaded; the phone displayed the draft-preservation notice.
+- After saving the draft, computer deletion propagated automatically and blanked the phone editor without a manual Sync now action.
+- History recovery restored the deleted note, and the owner confirmed restoration propagated in both directions between the phone and computer.
+- The owner reported the competing-edit scenario worked as expected: an offline phone edit uploaded after a computer edit became current on both devices, with both texts retained in history.
+- The owner reported that the offline-save/reconnect/reload scenario worked as expected: the saved edit survived the phone reload and reached the computer. Whether upload completed before the reload was not independently observed, so pending-outbox persistence across reload remains covered directly by the automated browser test.
+
+These are owner-reported observations, not direct automated inspection of the physical phone. Phone browser/version was not recorded. Earlier automated checks remain separate evidence. The service was subsequently restarted with the same data directory: all 17 accepted operations, the current record, service identity and both unexpired session records were unchanged, database integrity was ok, and the LAN page returned HTTP 200. The owner then confirmed the post-restart test worked as expected: existing device sessions continued working and saved edits synchronized in both directions between the computer and Xiaomi 13. Exact upload timing in the manual reload scenario was not independently observed. Public hosting, production authentication, internet/regional reachability and integration with the public Calendar remain untested or unimplemented.
+
+Separately, the owner confirmed that a note in the public Calendar survived reloading in the same Xiaomi browser. That verifies local persistence only; it does not establish sync for the public application.

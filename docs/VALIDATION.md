@@ -52,3 +52,19 @@ Added an accessible native date input and Show date action below the calendar, c
 ## Saved-note search
 
 Added Settings → Search saved notes. Search is case-insensitive over local saved text, excludes deleted notes and unsaved drafts, displays up to 20 newest-date results with a total count, and opens the selected date. Snippets render as plain text. Passed lint/build+typecheck and Chrome notes regression including search/open followed by backup and delete checks.
+
+## Physical-device test update — 2026-11-16
+
+Owner-reported manual results using a Xiaomi 13 and computer on the same LAN, account-a, and the isolated sync experiment at `http://192.168.68.58:8790/`:
+
+- Phone-to-computer and computer-to-phone saved edits received successfully.
+- Phone offline save followed by reconnection synchronized successfully.
+- An unsaved phone draft remained intact when a computer change downloaded; the phone displayed the draft-preservation notice.
+- After saving the draft, computer deletion propagated automatically and blanked the phone editor without a manual Sync now action.
+- History recovery restored the deleted note, and the owner confirmed restoration propagated in both directions between the phone and computer.
+- The owner reported the competing-edit scenario worked as expected: an offline phone edit uploaded after a computer edit became current on both devices, with both texts retained in history.
+- The owner reported that the offline-save/reconnect/reload scenario worked as expected: the saved edit survived the phone reload and reached the computer. Whether upload completed before the reload was not independently observed, so pending-outbox persistence across reload remains covered directly by the automated browser test.
+
+These are owner-reported observations, not direct automated inspection of the physical phone. Phone browser/version was not recorded. Earlier automated checks remain separate evidence. The service was subsequently restarted with the same data directory: all 17 accepted operations, the current record, service identity and both unexpired session records were unchanged, database integrity was ok, and the LAN page returned HTTP 200. The owner then confirmed the post-restart test worked as expected: existing device sessions continued working and saved edits synchronized in both directions between the computer and Xiaomi 13. Exact upload timing in the manual reload scenario was not independently observed. Public hosting, production authentication, internet/regional reachability and integration with the public Calendar remain untested or unimplemented.
+
+Separately, the owner confirmed that a note in the public Calendar survived reloading in the same Xiaomi browser. That verifies local persistence only; it does not establish sync for the public application.
