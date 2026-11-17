@@ -2,13 +2,17 @@ import {acknowledgeOperation,applyChanges,syncSnapshot} from './notes.ts'
 import type {ChangePage,RemoteNote} from './notes.ts'
 
 export interface ComputerSession {account:string;epoch:string}
+export class ComputerApiError extends Error {
+  status:number
+  constructor(status:number,message:string){super(message);this.name='ComputerApiError';this.status=status}
+}
 export async function computerApi(path:string,body?:unknown,account?:string):Promise<unknown>{
   const response=await fetch(`/api/${path}`,{
     method:body===undefined?'GET':'POST',credentials:'same-origin',
     headers:{...(body===undefined?{}:{'Content-Type':'application/json'}),...(account?{'X-Calendar-Account':account}:{})},
     body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(10000),
   })
-  if(!response.ok)throw new Error(response.status===401?'Sign-in expired. Reload to reconnect; local changes are retained.':response.status===409?'Account or service changed. Reload to reconnect; local changes are retained.':`Computer sync unavailable (${response.status}). Local changes are retained.`)
+  if(!response.ok)throw new ComputerApiError(response.status,response.status===401?(path==='login'?'Incorrect test credentials. Try again.':'Sign-in expired. Reconnect below; local changes and drafts are retained.'):response.status===409?'Account or service changed. Local changes are retained; export a backup before investigating.':`Computer sync unavailable (${response.status}). Local changes are retained.`)
   return response.json()
 }
 export function parseSession(value:unknown):ComputerSession{
@@ -16,6 +20,12 @@ export function parseSession(value:unknown):ComputerSession{
   const {account,epoch}=value as ComputerSession
   if(typeof account!=='string'||!/^account-[ab]$/.test(account)||typeof epoch!=='string'||!epoch.length)throw new Error('Invalid computer session.')
   return {account,epoch}
+}
+export function verifyReconnectedSession(value:unknown,previous:ComputerSession):ComputerSession{
+  const next=parseSession(value)
+  if(next.account!==previous.account)throw new Error('Reconnect the same account. Local changes have not been transferred.')
+  if(next.epoch!==previous.epoch)throw new Error('Service identity changed. Export a local backup before investigating; pending changes are retained.')
+  return next
 }
 function remoteNote(value:unknown):RemoteNote{
   if(!value||typeof value!=='object')throw new Error('Invalid downloaded note.')
@@ -36,7 +46,7 @@ export function parseChangePage(value:unknown,cursor:number,epoch:string):Change
 }
 export async function syncComputer(session:ComputerSession){
   const current=parseSession(await computerApi('session',undefined,session.account))
-  if(current.account!==session.account||current.epoch!==session.epoch)throw new Error('Account or service changed. Preserve local notes and reload.')
+  if(current.account!==session.account||current.epoch!==session.epoch)throw new Error('Account or service changed. Preserve local notes and export a backup before investigating.')
   const snapshot=await syncSnapshot(session.epoch)
   for(const operation of snapshot.pending.slice(0,100)){
     const value=await computerApi('operations',{epoch:session.epoch,operation:{id:operation.operationId,date:operation.date,text:operation.text,deleted:operation.deleted}},session.account)

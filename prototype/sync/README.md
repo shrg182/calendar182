@@ -120,3 +120,9 @@ Run `npm run build:computer` first. The existing `two-clients.cjs` still checks 
 In the Calendar staging build, open Settings → Storage options. Choose **This device** to pause synchronization, or **Your computer** to resume and upload pending saved edits. The selection survives reloading and applies only to that account's staging notes. Notes/history/drafts are kept in place; remote copies are not deleted. Controls wait for an ongoing sync to finish before switching. Choosing This device disables Sync now as well as automatic synchronization. The separate Automatic sync checkbox only controls scheduling and does not change the selected storage mode.
 
 Cloud entries remain disabled, and switching accounts or migrating data between providers is not implemented. Rebuild with `npm run build:computer` and reload the staging page to use these controls.
+
+### Reconnecting after sign-in expires
+
+If an open Calendar loses its test session, note synchronization stops and a **Reconnect same account** form appears above Calendar. Enter that account's generated test token. No page reload is needed: notes, pending edits, Settings selection and unsaved drafts stay in place. A rejected token is cleared; it does not switch accounts. Successful reconnection resumes pending saved edits only when Your computer is selected. Reconnecting while This device is selected keeps synchronization paused.
+
+This flow deliberately cannot move notes to another account or bypass a changed service identity. If the identity changes, export a local backup and investigate before proceeding. Tokens are held only in the form state and sent to the existing same-origin test login endpoint; they are not saved in browser storage. This remains test authentication, not a production account/recovery system. Offline page reload and signing back in after a full page reload remain separate lifecycle work.

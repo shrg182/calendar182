@@ -90,3 +90,9 @@ After adding per-account selection metadata and shared React controls, lint, typ
 The owner confirmed the integrated Calendar at `http://192.168.68.58:8791/calendar/` works between the computer and iPad Chrome: bidirectional saved edits, pausing iPad sync with no outbound propagation, local selection/saved note retained after online reload, successful resume, unsaved drafts surviving mode selection without implicit upload, explicit draft-save propagation, deletion and history recovery, and offline save/reconnect. This is manual owner-reported evidence; exact OS/browser versions and timings were not measured.
 
 See `COMPUTER_SYNC_ACCEPTANCE.md` for scope and exclusions. Xiaomi testing of this build, incoming writes while paused, concurrent physical-device edits, integrated-service restart, offline app-shell reload and production authentication are not established by this sequence. Implementation remains commit bd6b737; these results are documentation changes.
+
+### In-page session recovery — 2026-11-17
+
+Lint, typecheck, all 16 application tests and ordinary/staging builds passed. The full staging browser suite passed with added authentication-loss checks (one context's cookies removed): saved pending operation and unsaved draft retained, no focus/online retry after 401, wrong-account token rejected/cleared, correct same-account reconnect without reload, saved-operation convergence without implicit draft upload, subsequent explicit draft save, and local-only selection retained during reauthentication until explicitly resumed. Unit tests reject changed account/service epoch on reconnect. Desktop form/error screenshot was inspected.
+
+These are automated Chrome results; prior owner-reported iPad acceptance did not test the new reconnect form. No production identity provider or full-page/offline reload recovery is established. The ordinary build bundle remained unchanged; main was not merged or deployed.

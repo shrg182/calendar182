@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react'
-import {computerApi,parseSession,syncComputer} from './computerSync'
+import {ComputerApiError,computerApi,parseSession,syncComputer,verifyReconnectedSession} from './computerSync'
 import type {ComputerSession} from './computerSync'
 import {configureComputerStorage,readComputerSyncEnabled,writeComputerSyncEnabled} from './notes'
 import {ComputerStorageContext} from './computerStorageContext'
@@ -38,6 +38,8 @@ function ComputerWorkspace({session}:{session:ComputerSession}){
   const [status,setStatus]=useState('Ready to sync.'),[busy,setBusy]=useState(false)
   const [automatic,setAutomatic]=useState(true)
   const [enabled,setEnabled]=useState<boolean|null>(null),[changing,setChanging]=useState(false)
+  const [authRequired,setAuthRequired]=useState(false),[reconnecting,setReconnecting]=useState(false)
+  const [reconnectToken,setReconnectToken]=useState(''),[reconnectStatus,setReconnectStatus]=useState('')
   const selectionPending=useRef(false)
   useEffect(()=>{
     let active=true
@@ -58,9 +60,21 @@ function ComputerWorkspace({session}:{session:ComputerSession}){
   const run=useRef(false)
   const [wake,setWake]=useState(0)
   const consumedWake=useRef(0)
+  async function reconnect(){
+    if(reconnecting||run.current)return
+    setReconnecting(true);setReconnectStatus('Reconnecting…')
+    try{
+      verifyReconnectedSession(await computerApi('login',{account:session.account,token:reconnectToken}),session)
+      setAuthRequired(false)
+      setReconnectStatus('')
+      if(enabled){setStatus('Reconnected. Resuming saved changes; unsaved drafts remain on this device.');setWake(value=>value+1)}
+      else setStatus('Reconnected. Computer sync remains paused; notes and pending edits stay on this device.')
+    }catch(error){setReconnectStatus(error instanceof Error?error.message:'Could not reconnect. Local changes are retained.')}
+    finally{setReconnectToken('');setReconnecting(false)}
+  }
   useEffect(()=>{
-    if(enabled!==true)return
-    let active=true,timer:ReturnType<typeof setTimeout>,retry=2000
+    if(enabled!==true||authRequired)return
+    let active=true,timer:ReturnType<typeof setTimeout>,retry=2000,retryAllowed=true
     async function tick(){
       if(!active||selectionPending.current)return
       if(run.current){timer=setTimeout(tick,250);return}
@@ -77,8 +91,14 @@ function ComputerWorkspace({session}:{session:ComputerSession}){
         if(!result){if(active){setEnabled(false);setStatus('Computer sync paused. Notes and pending edits stay on this device.')}return}
         if(active)setStatus(result.more||result.pending?'Changes pending; sync will continue.':'Saved notes synced. Unsaved drafts stay on this device.')
         retry=result.more||result.pending?250:15000
-      }catch(error){if(active)setStatus(error instanceof Error?error.message:'Sync failed; local changes retained.');retry=Math.min(retry*2,60000)}
-      finally{run.current=false;setBusy(false);if(active&&automatic)timer=setTimeout(tick,retry)}
+      }catch(error){
+        if(active){
+          setStatus(error instanceof Error?error.message:'Sync failed; local changes retained.')
+          if(error instanceof ComputerApiError&&error.status===401){retryAllowed=false;setAuthRequired(true)}
+        }
+        retry=Math.min(retry*2,60000)
+      }
+      finally{run.current=false;setBusy(false);if(active&&automatic&&retryAllowed)timer=setTimeout(tick,retry)}
     }
     const manual=wake!==consumedWake.current
     consumedWake.current=wake
@@ -86,6 +106,13 @@ function ComputerWorkspace({session}:{session:ComputerSession}){
     const kick=()=>{if(automatic){clearTimeout(timer);if(!run.current)void tick()}}
     window.addEventListener('online',kick);window.addEventListener('focus',kick);window.addEventListener('calendar-note-saved',kick);document.addEventListener('visibilitychange',kick)
     return ()=>{active=false;clearTimeout(timer);window.removeEventListener('online',kick);window.removeEventListener('focus',kick);window.removeEventListener('calendar-note-saved',kick);document.removeEventListener('visibilitychange',kick)}
-  },[session,wake,automatic,enabled])
-  return <ComputerStorageContext.Provider value={{enabled:enabled===true,busy:busy||changing||enabled===null,select}}><aside className="computer-sync" aria-label="Computer synchronization"><strong>Computer sync test · {session.account}</strong><p>Separate test notes. One tab per browser profile. Keep the computer service running.</p><label><input type="checkbox" checked={automatic} disabled={enabled!==true||changing} onChange={event=>setAutomatic(event.target.checked)}/> Automatic sync while this page is open</label><button disabled={busy||changing||enabled!==true} onClick={()=>setWake(value=>value+1)}>Sync now</button><p role="status">{status}</p></aside><App/></ComputerStorageContext.Provider>
+  },[session,wake,automatic,enabled,authRequired])
+  return <ComputerStorageContext.Provider value={{enabled:enabled===true,busy:busy||changing||reconnecting||enabled===null,select}}><aside className="computer-sync" aria-label="Computer synchronization"><strong>Computer sync test · {session.account}</strong><p>Separate test notes. One tab per browser profile. Keep the computer service running.</p><label><input type="checkbox" checked={automatic} disabled={enabled!==true||changing||authRequired} onChange={event=>setAutomatic(event.target.checked)}/> Automatic sync while this page is open</label><button disabled={busy||changing||enabled!==true||authRequired} onClick={()=>setWake(value=>value+1)}>Sync now</button><p role="status">{status}</p>
+    {authRequired&&<form className="computer-login" aria-label="Reconnect computer synchronization" onSubmit={event=>{event.preventDefault();void reconnect()}}>
+      <p>Reconnect <strong>{session.account}</strong> without reloading. Your notes, pending edits and unsaved drafts stay in place.</p>
+      <label htmlFor="reconnect-token">Reconnect test token</label><input id="reconnect-token" type="password" autoComplete="off" required disabled={reconnecting} value={reconnectToken} onChange={event=>setReconnectToken(event.target.value)}/>
+      <button disabled={reconnecting} type="submit">Reconnect same account</button>
+      {reconnectStatus&&<p role="alert">{reconnectStatus}</p>}
+    </form>}
+  </aside><App/></ComputerStorageContext.Provider>
 }

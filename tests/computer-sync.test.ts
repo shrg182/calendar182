@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {configureComputerStorage,saveNote,readNotes,exportBackup,syncSnapshot,acknowledgeOperation,applyChanges,readComputerSyncEnabled,writeComputerSyncEnabled} from '../src/notes.ts'
-import {parseChangePage,parseSession} from '../src/computerSync.ts'
+import {parseChangePage,parseSession,verifyReconnectedSession} from '../src/computerSync.ts'
 
 test('staging isolates accounts, retains newer pending edits, applies tombstones and binds service identity',async()=>{
   configureComputerStorage('account-a')
@@ -48,4 +48,11 @@ test('malformed or unordered pages and unexpected account sessions are rejected'
     {...page,changes:[{...note,deleted:true}]},
     {...page,changes:[],cursor:0,hasMore:true},
   ])assert.throws(()=>parseChangePage(bad,0,'test'))
+})
+
+test('reconnection must retain both account and service identity',()=>{
+  const previous={account:'account-a',epoch:'existing-service'}
+  assert.deepEqual(verifyReconnectedSession({...previous},previous),previous)
+  assert.throws(()=>verifyReconnectedSession({account:'account-b',epoch:previous.epoch},previous),/same account/)
+  assert.throws(()=>verifyReconnectedSession({account:previous.account,epoch:'replacement-service'},previous),/identity changed/)
 })
