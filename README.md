@@ -21,3 +21,7 @@ Settings → Pages → Source must be GitHub Actions. The workflow checks pull r
 See [feature audit](docs/FEATURE_PARITY_MATRIX.md), [calculation conventions](docs/CALCULATION_CONVENTIONS.md), and [owner requirements](docs/REQUIREMENTS_UPDATE.md). Automatic cross-device sync remains required for the first release.
 
 To recover earlier text, open a date → Note history → choose a version → Use this version → Save note. Existing unsaved drafts require confirmation before replacement.
+
+## Project documentation
+
+The application and Git repository root is `calendar182/`. Run development commands from this directory. The nested [`calendar/`](calendar/) folder preserves the moved planning workspace: design briefs, reviews, and early audit snapshots. Current application documentation lives in [`docs/`](docs/); the consolidated development handoff is [`calendar/HANDOFF.md`](calendar/HANDOFF.md).

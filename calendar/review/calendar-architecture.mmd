@@ -1,0 +1,30 @@
+flowchart TB
+  subgraph Runtime["APPLICATION RUNTIME — proposed"]
+    UI["Calendar UI / PWA\nCalendar · Day details · Notes · Settings"]
+    Services["Application services\nNavigation · Notes · Settings · Search"]
+    Engine["Deterministic engines\nGregorian / Lunar · GanZhi · Shensha"]
+    Store[("Versioned IndexedDB\nNotes · Settings · Recovery data")]
+    Backup["Validated backup / restore\nExport · Preview · Retained snapshots"]
+    Sync["Later: sync engine\nOutbox · Revisions · Conflicts · Retries"]
+    Cloud["One verified provider first\nUser-owned cloud account"]
+    Assistant["Optional Assistant\nReviewed tools + permission boundary"]
+    AI["Optional AI provider\nExplicit consent for transmitted data"]
+    UI --> Services
+    Services --> Engine
+    Services --> Store
+    Services --> Backup
+    Backup <--> Store
+    Store <--> Sync
+    Sync <--> Cloud
+    UI -.-> Assistant
+    Assistant -.-> Services
+    Assistant -.-> AI
+  end
+  subgraph Development["DEVELOPMENT WORKFLOW — outside the shipped app"]
+    Spec["Owner + coordinator\nScope · Interfaces · Acceptance"]
+    Build["Implementation roles\nUI · Calendar logic · Storage"]
+    Review["Independent testing + review\nParity · Recovery · Privacy · Accessibility"]
+    Release["Release gate\nEvidence · Approval · Rollback plan"]
+    Spec --> Build --> Review --> Release
+    Review -->|Findings| Build
+  end
