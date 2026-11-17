@@ -131,4 +131,4 @@ Separately, the owner confirmed that a note in the public Calendar survived relo
 
 ## Hosting evaluation update — 2026-11-16
 
-Physical-device test results were committed as `16ff8e3` on `sync-prototype`. See `docs/SYNC_HOSTING_EVALUATION.md` for the researched hosting/authentication shortlist, proposed same-origin HTTPS pilot, and integration prerequisites. Provider selection, budget and required regions remain unresolved. No paid resource, external identity account or public sync deployment was created.
+Physical-device test results were committed as `16ff8e3` on `sync-prototype`. See `docs/SYNC_HOSTING_EVALUATION.md` for the researched hosting/authentication shortlist, proposed same-origin HTTPS pilot, and integration prerequisites. The owner subsequently confirmed free services only. Workers Free + D1 Free is the current evaluation candidate; paid hosting is excluded. Provider selection, free authentication and required regions remain unresolved. No paid resource, external identity account or public sync deployment was created.

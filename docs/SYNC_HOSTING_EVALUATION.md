@@ -4,17 +4,29 @@ Reviewed 2026-11-16. Status: proposal, no provider selected or connected, no pai
 
 ## Recommendation
 
-Evaluate a single paid Python service with a persistent SQLite volume first. This is an engineering recommendation based on reusing the tested write-order and retry protocol, not a decision to purchase or deploy. Render is the first candidate; Fly.io is an alternative. A free-only requirement would justify a separate Workers/D1 feasibility spike rather than placing SQLite on an ephemeral free filesystem.
+Owner constraint: **free services only**, confirmed 2026-11-16. Do not enable paid plans, paid add-ons or metered paid fallback. Paid Python hosting is excluded from the current pilot.
 
-A monthly budget and mainland-China access requirement remain to be confirmed by the owner. No actual China reachability, hosted latency, authentication delivery, or billing measurements exist. Official documentation is not evidence of regional reachability. Obtain current plan quotes for compute, persistent storage, backup storage, outbound traffic, authentication and email before selecting a paid pilot. Do not infer a total from a provider's headline compute price.
+Evaluate Cloudflare Workers Free + D1 Free with an isolated local feasibility implementation first. This is a candidate, not a selected or deployed provider. Port the tested acceptance/retry protocol and validate it against D1's runtime before connecting any Calendar data. Preserve the working Python LAN experiment as a reference.
+
+The mainland-China access requirement remains unanswered. No actual China reachability, hosted latency or authentication delivery measurements exist; provider documentation does not prove reachability.
+
+### Verified free-tier envelope
+
+As documented on the review date, Workers Free includes 100,000 requests/day and 10 ms CPU per invocation. D1 Free includes 5 million rows read/day, 100,000 rows written/day, 5 GB total storage, and a 500 MB per-database size limit. Limits apply at account level where specified, so other projects share allowances. D1 returns errors when daily query limits are exhausted; clients must preserve local notes/outboxes and retry later, never upgrade automatically.
+
+Sources: [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), [D1 pricing and exhaustion behavior](https://developers.cloudflare.com/d1/platform/pricing/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/).
+
+Planning arithmetic, not a load-test result: a device polling once every 15 seconds for 24 hours makes 5,760 change requests/day. Two devices make 11,520 before login, saves and other requests. Suspend polling when hidden, back off failures and measure indexed row reads plus authentication/session overhead. This calculation does not prove service capacity or end-to-end availability.
+
+Free sign-in remains to be selected: verify that the chosen identity provider's free plan covers hosted sign-in, required recovery and the pilot's active users without paid email/SMS or other add-ons. The earlier Auth0 example establishes an authentication pattern, not a verified free end-to-end identity solution. Provisioning and public deployment remain pending.
 
 ## Shortlist
 
 | Candidate | Verified platform property | Implication for this project |
 | --- | --- | --- |
-| Render paid web service + persistent disk | Disk-backed files persist across deploys/restarts; free web services cannot attach persistent disks. | Closest candidate to the current Python/SQLite implementation. Use one writer service; establish downtime tolerance, off-service database backups and restore tests before a pilot. |
-| Fly.io Machine + volume | Machine root filesystems are ephemeral; volumes provide local persistent storage tied to the Machine's physical server. | Another Python/SQLite candidate; placement, recovery and any redundancy need an explicit operating plan. A persistent volume alone does not prove high availability. |
-| Cloudflare Workers + D1 | D1 has a Worker database API; documented database-size, request and recovery limits apply. | Requires porting the HTTP and transaction implementation. Prove atomic acceptance/deduplication, read consistency and rollback under concurrency; similarity to SQLite is not proof of unchanged semantics. |
+| Render paid web service + persistent disk (excluded: paid) | Disk-backed files persist across deploys/restarts; free web services cannot attach persistent disks. | Closest candidate to the current Python/SQLite implementation. Use one writer service; establish downtime tolerance, off-service database backups and restore tests before a pilot. |
+| Fly.io Machine + volume (excluded from free-only pilot) | Machine root filesystems are ephemeral; volumes provide local persistent storage tied to the Machine's physical server. | Another Python/SQLite candidate; placement, recovery and any redundancy need an explicit operating plan. A persistent volume alone does not prove high availability. |
+| Cloudflare Workers Free + D1 Free (current candidate) | D1 has a Worker database API; documented database-size, request and recovery limits apply. | Requires porting the HTTP and transaction implementation. Prove atomic acceptance/deduplication, read consistency and rollback under concurrency; similarity to SQLite is not proof of unchanged semantics. |
 
 Sources checked: [Render disks](https://render.com/docs/disks), [Render free-service limitations](https://render.com/docs/free), [Render pricing](https://render.com/pricing), [Fly volumes](https://docs.fly.io/volumes/overview), [D1 API](https://developers.cloudflare.com/d1/worker-api/d1-database/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/). Prices and limits should be rechecked when provisioning.
 
@@ -36,9 +48,9 @@ Implementation requirements:
 
 ## Work before an external pilot
 
-1. Confirm budget, required regions and preferred sign-in method; choose hosting and identity provider using current quotes and actual reachability tests.
-2. Replace the development HTTP server with a supported production application stack, HTTPS-aware trusted-proxy/origin configuration and bounded request processing. Preserve the tested protocol and all synthetic regressions.
-3. Add consistent SQLite backups using the database backup API, encrypted off-service copies and restore drills. A restored database must not silently reuse a service identity with missing acknowledged revisions: define epoch/cursor recovery and preserve client outboxes. Disk snapshots alone are not a demonstrated database backup strategy.
+1. Keep the confirmed free-only budget. Confirm required regions and preferred sign-in method; verify hosting/authentication free-plan eligibility, limits and actual reachability.
+2. Implement a separate local Workers/D1 feasibility spike. Prove atomic write ordering, immutable operation IDs, lost-ack retries, account isolation, pagination and rollback with the D1 runtime. Add HTTPS-aware origin/session handling and bounded request processing before public deployment.
+3. Define D1 export/recovery and an independent backup procedure that uses free resources, then exercise restore drills. Retain consistent SQLite backups for the reference experiment using the database backup API. A restored database must not silently reuse a service identity with missing acknowledged revisions: define epoch/cursor recovery and preserve client outboxes. Disk snapshots alone are not a demonstrated database backup strategy.
 4. Add retention, account deletion, pagination/limits for history and local multi-tab coordination. Bound polling/backoff and measure traffic at expected device counts; the 84-byte idle JSON result excludes headers, TLS, requests and billing overhead.
 5. Build an isolated staging Calendar integration with separate storage/account namespaces. Export a backup before any opt-in transfer of existing local notes. Keep personal production notes out of the experiment.
 6. Run hosted tests for simultaneous saves, lost acknowledgements, outages, expired sessions, account isolation, backup restore, mobile lifecycle and reload. Repeat physical-device checks over separate networks with HTTPS.
