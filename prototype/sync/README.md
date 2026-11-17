@@ -126,3 +126,15 @@ Cloud entries remain disabled, and switching accounts or migrating data between 
 If an open Calendar loses its test session, note synchronization stops and a **Reconnect same account** form appears above Calendar. Enter that account's generated test token. No page reload is needed: notes, pending edits, Settings selection and unsaved drafts stay in place. A rejected token is cleared; it does not switch accounts. Successful reconnection resumes pending saved edits only when Your computer is selected. Reconnecting while This device is selected keeps synchronization paused.
 
 This flow deliberately cannot move notes to another account or bypass a changed service identity. If the identity changes, export a local backup and investigate before proceeding. Tokens are held only in the form state and sent to the existing same-origin test login endpoint; they are not saved in browser storage. This remains test authentication, not a production account/recovery system. Offline page reload and signing back in after a full page reload remain separate lifecycle work.
+
+## Offline reopening and local HTTPS
+
+The staging build now includes a versioned app-shell worker, remembered non-secret account labels for local access while disconnected, and waiting updates that never force reloads. Saved offline edits survive reload and resume after same-account/service verification. Unsaved drafts still require explicit Save before closing/reloading.
+
+The previous HTTP LAN address cannot support service workers on iPad. A separate local HTTPS test endpoint and certificate/profile preparation are available; no device trust settings are changed automatically. See [offline behavior, HTTPS setup, trust steps and test evidence](../../docs/OFFLINE_LOADING.md). The normal/public Calendar build has no worker registration from this change. Certificates and private keys must remain in ignored `.data` paths.
+
+Browser verification (build first):
+
+```sh
+PLAYWRIGHT_PATH=/path/to/playwright node prototype/sync/offline-clients.cjs
+```

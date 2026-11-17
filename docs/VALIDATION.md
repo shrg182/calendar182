@@ -100,3 +100,11 @@ These are automated Chrome results; prior owner-reported iPad acceptance did not
 ### Owner-reported iPad sign-in recovery — 2026-11-17
 
 On implementation 224d8fc the owner prepared an unsaved iPad draft, then five account-a staging sessions were explicitly expired with no accepted-note-operation change. Owner confirmed the reconnect form appeared, the draft survived, same-account reconnection dismissed the form without changing the draft, the reconnected computer still showed prior saved text, and explicit Save note on iPad propagated "Reconnect draft test" as expected. This covers real staging session expiry and no-reload draft-preserving recovery by human observation. Wrong-token/local-only recovery remains automated evidence only; no production authentication or offline app-shell behavior is established.
+
+### Offline app-shell/local HTTPS — 2026-11-17
+
+All 17 application tests passed, including remembered account/service metadata without token persistence and corrupt identity rejection; lint/typecheck and ordinary/staging builds passed. The ordinary JS asset remained unchanged and no ordinary worker was emitted. The known large-chunk warning remains.
+
+New offline browser suite passed with real workers on secure loopback: reload offline into saved notes, save/reload offline, reconnect convergence, API cache exclusion, expired-auth local opening/reconnect, failed new-worker install rollback, two-tab waiting update preserving an unsaved draft, saved notes surviving activation and the new shell reopening offline. Full existing Calendar sync/session-recovery browser suite passed with the new banner. All browser test data was temporary.
+
+All 10 Python HTTP/HTTPS service tests passed, including normal CA/hostname verification, refusal without trusted CA, HTTPS origin enforcement, separate Secure/HttpOnly session cookie, and public certificate/profile content limited to the prepared certificate. Retained HTTPS Calendar returned 200 with an explicit trusted CA; downloaded public profile matched local DER with one certificate payload. No trust-store installation or insecure browser flags were used. iPad trust/HTTPS/offline reopening and home-screen installation remain unverified. See OFFLINE_LOADING.md.

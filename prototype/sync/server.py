@@ -11,10 +11,12 @@ from pathlib import Path
 import re
 import secrets
 import sqlite3
+import ssl
 import time
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
+from prepare_local_https import configuration_profile
 
 CLIENT = Path(__file__).with_name('client')
 
@@ -137,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
         if hostname not in self.server.allowed_hosts:
             self.send(403, {'error': 'Host not allowed'})
             return False
-        if write and self.headers.get('Origin') != 'http://' + host:
+        if write and self.headers.get('Origin') != self.server.scheme + '://' + host:
             self.send(403, {'error': 'Same-origin browser request required'})
             return False
         return True
@@ -146,7 +148,7 @@ class Handler(BaseHTTPRequestHandler):
         cookie = SimpleCookie()
         try:
             cookie.load(self.headers.get('Cookie', ''))
-            token = cookie['calendar_sync_test'].value
+            token = cookie[self.server.session_cookie].value
         except (KeyError, ValueError):
             return None
         with self.server.store.connect() as db:
@@ -160,6 +162,12 @@ class Handler(BaseHTTPRequestHandler):
         if not self.guard():
             return
         path = urlsplit(self.path)
+        if path.path == '/calendar/local-ca.cer' and self.server.ca_certificate:
+            self.send(200, self.server.ca_certificate, content_type='application/pkix-cert')
+            return
+        if path.path == '/calendar/local-ca.mobileconfig' and self.server.ca_certificate:
+            self.send(200, configuration_profile(self.server.ca_certificate), content_type='application/x-apple-aspen-config')
+            return
         if path.path == '/calendar':
             self.send_response(302)
             self.send_header('Location', '/calendar/')
@@ -168,7 +176,7 @@ class Handler(BaseHTTPRequestHandler):
         if path.path.startswith('/calendar/') and self.server.calendar_dist:
             relative = path.path[len('/calendar/'):] or 'index.html'
             # Serve only the explicitly built app and its generated assets.
-            allowed = relative == 'index.html' or relative in ('favicon.svg', 'lunar-javascript-LICENSE.txt') or re.fullmatch(r'assets/[A-Za-z0-9_-]+\.(?:js|css)', relative)
+            allowed = relative == 'index.html' or relative in ('favicon.svg', 'lunar-javascript-LICENSE.txt', 'offline-worker.js') or re.fullmatch(r'assets/[A-Za-z0-9_-]+\.(?:js|css)', relative)
             asset = self.server.calendar_dist / relative
             if allowed and asset.is_file():
                 self.send(200, asset.read_bytes(), content_type=mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
@@ -225,8 +233,9 @@ class Handler(BaseHTTPRequestHandler):
                     db.execute('DELETE FROM sessions WHERE expires<=?', (int(time.time()),))
                     db.execute('INSERT INTO sessions VALUES (?,?,?)',
                                (hashlib.sha256(session.encode()).hexdigest(), account, int(time.time()) + 86400))
+                secure = '; Secure' if self.server.scheme == 'https' else ''
                 self.send(200, {'account': account, 'epoch': self.server.store.epoch},
-                          f'calendar_sync_test={session}; HttpOnly; SameSite=Strict; Path=/api; Max-Age=86400')
+                          f'{self.server.session_cookie}={session}; HttpOnly; SameSite=Strict; Path=/api; Max-Age=86400{secure}')
                 return
             account = self.account()
             if not account:
@@ -244,7 +253,18 @@ class Handler(BaseHTTPRequestHandler):
             self.send(503, {'error': 'Storage unavailable; retry with the same operation ID'})
 
 
-def make_server(host, port, data, allowed_hosts=(), calendar_dist=None):
+def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile=None, keyfile=None, ca_cert=None):
+    if bool(certfile) != bool(keyfile):
+        raise ValueError('Both certfile and keyfile are required for HTTPS')
+    ca_certificate = None
+    if ca_cert:
+        # Serve parsed public certificate bytes only, never raw input/key files.
+        ca_certificate = ssl.PEM_cert_to_DER_cert(Path(ca_cert).read_text())
+    context = None
+    if certfile:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+        context.load_cert_chain(certfile, keyfile)
     data = Path(data)
     data.mkdir(parents=True, exist_ok=True, mode=0o700)
     credentials_path = data / 'test-credentials.json'
@@ -253,6 +273,11 @@ def make_server(host, port, data, allowed_hosts=(), calendar_dist=None):
         with os.fdopen(fd, 'w') as stream:
             json.dump({name: secrets.token_urlsafe(32) for name in ('account-a', 'account-b')}, stream)
     server = ThreadingHTTPServer((host, port), Handler)
+    server.scheme = 'https' if context else 'http'
+    server.session_cookie = 'calendar_sync_test_https' if context else 'calendar_sync_test'
+    server.ca_certificate = ca_certificate
+    if context:
+        server.socket = context.wrap_socket(server.socket, server_side=True)
     server.store = Store(data / 'sync.sqlite3')
     server.credentials = json.loads(credentials_path.read_text())
     server.allowed_hosts = {'127.0.0.1', 'localhost', *allowed_hosts}
@@ -268,8 +293,11 @@ if __name__ == '__main__':
     parser.add_argument('--data-dir', default=str(Path(__file__).with_name('.data')))
     parser.add_argument('--allow-host', action='append', default=[])
     parser.add_argument('--calendar-dist', help='Serve an isolated Calendar build at /calendar/ (synthetic notes only)')
+    parser.add_argument('--certfile', help='Local HTTPS server certificate (no automatic trust installation)')
+    parser.add_argument('--keyfile', help='Private key for --certfile')
+    parser.add_argument('--ca-cert', help='Public PEM CA certificate to offer at /calendar/local-ca.cer')
     args = parser.parse_args()
-    server = make_server(args.host, args.port, args.data_dir, args.allow_host, args.calendar_dist)
+    server = make_server(args.host, args.port, args.data_dir, args.allow_host, args.calendar_dist, args.certfile, args.keyfile, args.ca_cert)
     print(f'Test-note prototype listening on {args.host}:{server.server_port}', flush=True)
     print(f'Test credentials file: {Path(args.data_dir).resolve() / "test-credentials.json"}', flush=True)
     try:

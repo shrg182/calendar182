@@ -4,25 +4,37 @@ import type {ComputerSession} from './computerSync'
 import {configureComputerStorage,readComputerSyncEnabled,writeComputerSyncEnabled} from './notes'
 import {ComputerStorageContext} from './computerStorageContext'
 import App from './App'
+import {rememberComputer,rememberedComputer} from './rememberedComputer'
 
 export function ComputerStaging(){
   const [session,setSession]=useState<ComputerSession|null>(null)
+  const [localAccess,setLocalAccess]=useState(false),[verifyLocal,setVerifyLocal]=useState(false)
   const [account,setAccount]=useState('account-a'),[token,setToken]=useState('')
-  const [status,setStatus]=useState('Connect with the generated test credentials. Use synthetic notes only.')
-  const [busy,setBusy]=useState(false)
+  const [status,setStatus]=useState('Checking computer connection…')
+  const [busy,setBusy]=useState(true)
   async function activate(value:unknown){
     const next=parseSession(value)
     configureComputerStorage(next.account)
+    await rememberComputer(next)
+    setLocalAccess(false);setVerifyLocal(false)
     setSession(next)
   }
   useEffect(()=>{
     let active=true
-    computerApi('session').then(async value=>{if(active)await activate(value)}).catch(()=>{})
+    computerApi('session').then(async value=>{if(active)await activate(value)}).catch(async error=>{
+      try{
+        const saved=await rememberedComputer()
+        if(active&&saved){
+          configureComputerStorage(saved.account)
+          setLocalAccess(true);setVerifyLocal(!(error instanceof ComputerApiError&&error.status===401));setSession(saved)
+        }else if(active)setStatus(error instanceof ComputerApiError&&error.status===401?'Connect with the generated test credentials. Use synthetic notes only.':'No previously connected account is available here. Connect to the computer once before reopening its notes offline.')
+      }catch{if(active)setStatus('Local notes could not be opened. Reconnect to the computer and retry; stored notes have not been cleared.')}
+    }).finally(()=>{if(active)setBusy(false)})
     return ()=>{active=false}
   },[])
-  if(session)return <ComputerWorkspace session={session}/>
+  if(session)return <ComputerWorkspace session={session} localAccess={localAccess} verifyLocal={verifyLocal}/>
   return <main className="app"><section className="panel"><h1>Calendar computer sync test</h1>
-    <p>This separate test build uses its own notes database. Your usual Calendar notes are untouched. Use fake notes only; the local test connection uses HTTP.</p>
+    <p>This separate test build uses its own notes database. Your usual Calendar notes are untouched. Use fake notes only; this build uses test authentication.</p>
     <form className="computer-login" onSubmit={async event=>{
       event.preventDefault();if(busy)return;setBusy(true)
       try{await activate(await computerApi('login',{account,token}));setToken('')}
@@ -34,11 +46,13 @@ export function ComputerStaging(){
       <button disabled={busy} type="submit">Connect computer sync</button>
     </form><p role="status">{status}</p></section></main>
 }
-function ComputerWorkspace({session}:{session:ComputerSession}){
-  const [status,setStatus]=useState('Ready to sync.'),[busy,setBusy]=useState(false)
+function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSession;localAccess:boolean;verifyLocal:boolean}){
+  const [status,setStatus]=useState(localAccess?'Local notes opened. Saved edits stay queued until the computer session is verified.':'Ready to sync.'),[busy,setBusy]=useState(false)
   const [automatic,setAutomatic]=useState(true)
   const [enabled,setEnabled]=useState<boolean|null>(null),[changing,setChanging]=useState(false)
-  const [authRequired,setAuthRequired]=useState(false),[reconnecting,setReconnecting]=useState(false)
+  const [authRequired,setAuthRequired]=useState(localAccess),[reconnecting,setReconnecting]=useState(false)
+  const [needsVerification,setNeedsVerification]=useState(verifyLocal)
+  const verifying=useRef(false)
   const [reconnectToken,setReconnectToken]=useState(''),[reconnectStatus,setReconnectStatus]=useState('')
   const selectionPending=useRef(false)
   useEffect(()=>{
@@ -60,6 +74,25 @@ function ComputerWorkspace({session}:{session:ComputerSession}){
   const run=useRef(false)
   const [wake,setWake]=useState(0)
   const consumedWake=useRef(0)
+  async function verifySavedSession(){
+    if(verifying.current||!needsVerification)return
+    verifying.current=true
+    try{
+      verifyReconnectedSession(await computerApi('session',undefined,session.account),session)
+      setNeedsVerification(false);setAuthRequired(false)
+      setStatus(enabled?'Computer connection restored. Saved changes can synchronize; unsaved drafts stay here.':'Computer connection restored. Sync remains paused; local notes and pending edits are retained.')
+      setWake(value=>value+1)
+    }catch(error){
+      if(error instanceof ComputerApiError&&error.status===401){setNeedsVerification(false);setStatus('Sign-in expired. Reconnect below; local notes and drafts are retained.')}
+      else setStatus(error instanceof Error&&error.message.includes('identity changed')?error.message:'Computer connection unavailable. Local notes and pending edits are retained.')
+    }finally{verifying.current=false}
+  }
+  useEffect(()=>{
+    if(!needsVerification)return
+    const check=()=>{if(navigator.onLine)void verifySavedSession()}
+    window.addEventListener('online',check);window.addEventListener('focus',check)
+    return ()=>{window.removeEventListener('online',check);window.removeEventListener('focus',check)}
+  })
   async function reconnect(){
     if(reconnecting||run.current)return
     setReconnecting(true);setReconnectStatus('Reconnecting…')
@@ -108,7 +141,8 @@ function ComputerWorkspace({session}:{session:ComputerSession}){
     return ()=>{active=false;clearTimeout(timer);window.removeEventListener('online',kick);window.removeEventListener('focus',kick);window.removeEventListener('calendar-note-saved',kick);document.removeEventListener('visibilitychange',kick)}
   },[session,wake,automatic,enabled,authRequired])
   return <ComputerStorageContext.Provider value={{enabled:enabled===true,busy:busy||changing||reconnecting||enabled===null,select}}><aside className="computer-sync" aria-label="Computer synchronization"><strong>Computer sync test · {session.account}</strong><p>Separate test notes. One tab per browser profile. Keep the computer service running.</p><label><input type="checkbox" checked={automatic} disabled={enabled!==true||changing||authRequired} onChange={event=>setAutomatic(event.target.checked)}/> Automatic sync while this page is open</label><button disabled={busy||changing||enabled!==true||authRequired} onClick={()=>setWake(value=>value+1)}>Sync now</button><p role="status">{status}</p>
-    {authRequired&&<form className="computer-login" aria-label="Reconnect computer synchronization" onSubmit={event=>{event.preventDefault();void reconnect()}}>
+    {needsVerification&&<button onClick={()=>void verifySavedSession()}>Check computer connection</button>}
+    {authRequired&&!needsVerification&&<form className="computer-login" aria-label="Reconnect computer synchronization" onSubmit={event=>{event.preventDefault();void reconnect()}}>
       <p>Reconnect <strong>{session.account}</strong> without reloading. Your notes, pending edits and unsaved drafts stay in place.</p>
       <label htmlFor="reconnect-token">Reconnect test token</label><input id="reconnect-token" type="password" autoComplete="off" required disabled={reconnecting} value={reconnectToken} onChange={event=>setReconnectToken(event.target.value)}/>
       <button disabled={reconnecting} type="submit">Reconnect same account</button>

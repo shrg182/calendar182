@@ -156,7 +156,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
   await B.getByRole('button',{name:'Settings',exact:true}).click();
   await B.getByText('Connected in this isolated test build',{exact:true}).waitFor();
   for(const width of [320,390,1280]){await B.setViewportSize({width,height:900});assert.equal(await B.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
-  assert.equal(await B.locator('.computer-sync').count(),1);
+  assert.equal(await B.locator('.computer-sync[aria-label="Computer synchronization"]').count(),1);
   assert.equal(await B.locator('header').count(),1);
   await B.screenshot({path:'/tmp/calendar182-computer-staging.png'});
   await B.setViewportSize({width:320,height:900});

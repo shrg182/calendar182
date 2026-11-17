@@ -96,3 +96,7 @@ Owner confirmed the reconnect form disappeared after entering the account-a toke
 After reconnecting the computer, the owner confirmed it still showed the previously saved text, excluding the unsaved iPad draft. Then, instructed to explicitly Save note on iPad and check for "Reconnect draft test" on the computer, the owner reported "It works as expected."
 
 The guided recovery sequence on implementation 224d8fc passed by owner report: actual staging sign-in expiry, reconnect form appearance, unsaved draft retained before/after same-account reauthentication without reload, computer reauthentication with no implicit draft upload, and explicit post-reconnect Save convergence. Wrong-token handling and reconnecting in local-only mode have automated coverage but were not physically tested in this sequence. Exact OS/browser versions and timings remain unrecorded. Earlier in-progress statements above describe intermediate checkpoints.
+
+## Offline reopening/HTTPS follow-up — prepared, not physically accepted
+
+Offline shell/update code is now tested on secure loopback. The earlier HTTP LAN iPad sequence does not establish offline reload support. Local HTTPS endpoint on port 8792 and a public Calendar182 certificate-only profile are prepared; device trust has not been changed. Await explicit user preference before guiding iPad root-certificate trust. See OFFLINE_LOADING.md for exact URLs, fingerprint, setup/removal instructions and remaining checks. HTTPS browser storage is separate from the old HTTP origin.

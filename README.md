@@ -31,3 +31,5 @@ The application and Git repository root is `calendar182/`. Run development comma
 ## Isolated computer-sync test
 
 The ordinary development preview remains local-only. A separate Calendar staging build now connects to the computer-hosted Python sync experiment using isolated account-specific notes. Run `npm run build:computer` and follow the [staging instructions](prototype/sync/README.md#calendar-ui-staging-build--2026-11-17). It uses test credentials and synthetic notes; provider switching and production account handling are not implemented.
+
+The isolated build also supports offline reopening and safe waiting updates on secure origins. Plain HTTP LAN addresses cannot provide this on iPad; optional local HTTPS setup requires explicit device certificate trust. See [offline loading and local HTTPS](docs/OFFLINE_LOADING.md). The public build is unchanged.

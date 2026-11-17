@@ -1,6 +1,8 @@
 import concurrent.futures
 import http.cookiejar
 import json
+import plistlib
+import ssl
 from pathlib import Path
 import tempfile
 import threading
@@ -8,6 +10,7 @@ import unittest
 import urllib.error
 import urllib.request
 from server import Store, make_server
+from prepare_local_https import prepare
 
 
 def operation(number, text='test', date='2026-11-16', deleted=False):
@@ -104,11 +107,14 @@ class HTTPTests(unittest.TestCase):
         (root / 'assets').mkdir(parents=True)
         (root / 'index.html').write_text('<html>Staging Calendar</html>')
         (root / 'assets' / 'index-test.js').write_text('console.log("test")')
+        (root / 'offline-worker.js').write_text('// test worker')
         (root / 'secret.json').write_text('private')
         self.server.calendar_dist = root
         with self.request('/calendar/') as response:
             self.assertIn(b'Staging Calendar', response.read())
         with self.request('/calendar/assets/index-test.js') as response:
+            self.assertIn('javascript', response.headers['Content-Type'])
+        with self.request('/calendar/offline-worker.js') as response:
             self.assertIn('javascript', response.headers['Content-Type'])
         for path in ('/calendar/secret.json', '/calendar/../test-credentials.json', '/calendar/assets/../../secret.json'):
             with self.assertRaises(urllib.error.HTTPError) as error:
@@ -157,6 +163,42 @@ class HTTPTests(unittest.TestCase):
             self.request('/api/changes')
         self.assertEqual(error.exception.code, 401)
         error.exception.close()
+
+
+class HTTPSTests(HTTPTests):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        tls = Path(self.temp.name) / 'tls'
+        prepare(tls, '127.0.0.1')
+        self.server = make_server('127.0.0.1', 0, Path(self.temp.name) / 'data',
+                                  certfile=tls / 'server.pem', keyfile=tls / 'server-key.pem', ca_cert=tls / 'ca.pem')
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.base = f'https://127.0.0.1:{self.server.server_port}'
+        context = ssl.create_default_context(cafile=str(tls / 'ca.pem'))
+        self.client = urllib.request.build_opener(urllib.request.HTTPSHandler(context=context),
+                          urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+
+    def test_https_cookie_certificate_and_origin(self):
+        with self.login('account-a') as response:
+            self.assertIn('calendar_sync_test_https=', response.headers['Set-Cookie'])
+            self.assertIn('; Secure', response.headers['Set-Cookie'])
+        with self.request('/calendar/local-ca.cer') as response:
+            self.assertEqual(response.headers['Content-Type'], 'application/pkix-cert')
+            self.assertEqual(response.read(), (Path(self.temp.name) / 'tls' / 'calendar-local-ca.cer').read_bytes())
+        with self.request('/calendar/local-ca.mobileconfig') as response:
+            profile = plistlib.loads(response.read())
+            self.assertEqual(len(profile['PayloadContent']), 1)
+            self.assertEqual(profile['PayloadContent'][0]['PayloadType'], 'com.apple.security.root')
+            self.assertEqual(profile['PayloadContent'][0]['PayloadContent'], (Path(self.temp.name) / 'tls' / 'calendar-local-ca.cer').read_bytes())
+        request = urllib.request.Request(self.base + '/api/login', data=b'{}',
+                  headers={'Origin': self.base.replace('https:', 'http:'), 'Content-Type': 'application/json'})
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.client.open(request)
+        self.assertEqual(error.exception.code, 403)
+        error.exception.close()
+        with self.assertRaises(urllib.error.URLError):
+            urllib.request.urlopen(self.base + '/calendar/local-ca.cer')
 
 
 if __name__ == '__main__':

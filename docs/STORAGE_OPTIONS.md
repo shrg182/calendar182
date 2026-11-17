@@ -46,3 +46,7 @@ The choice is separate from the Automatic sync checkbox: disabling automatic pol
 ## In-page session reconnection
 
 The staging workspace handles an expired or missing session without unmounting Calendar. A 401 stops retries and shows a same-account token form. Reconnecting preserves drafts, local records, the durable outbox and the selected synchronization mode. It resumes saved edits when computer mode is enabled and remains paused in local-only mode. Wrong credentials and different account/service identities are rejected before any queued note transfer. No logout/account migration or production identity system is introduced.
+
+## Offline reopening
+
+The isolated build can reopen cached app assets and saved account-local notes on a secure origin. Remembered account/service labels permit local access but do not authenticate uploads. Connectivity restoration verifies both labels before queued edits synchronize, and local-only mode stays paused. The app-shell cache excludes API data and credentials. Updates wait for all old Calendar tabs to close; users save drafts before closing. HTTP→HTTPS origin changes do not migrate local browser data. See [offline implementation and local HTTPS setup](OFFLINE_LOADING.md).
