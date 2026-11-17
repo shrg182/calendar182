@@ -50,3 +50,7 @@ The staging workspace handles an expired or missing session without unmounting C
 ## Offline reopening
 
 The isolated build can reopen cached app assets and saved account-local notes on a secure origin. Remembered account/service labels permit local access but do not authenticate uploads. Connectivity restoration verifies both labels before queued edits synchronize, and local-only mode stays paused. The app-shell cache excludes API data and credentials. Updates wait for all old Calendar tabs to close; users save drafts before closing. HTTP→HTTPS origin changes do not migrate local browser data. See [offline implementation and local HTTPS setup](OFFLINE_LOADING.md).
+
+## Shared tabs
+
+In the integrated Calendar, the stored local/computer selection now refreshes across same-account tabs in the same browser/origin. Saved changes and history refresh without replacing unsaved drafts. Secure-origin tabs coordinate sync/mode writes with Web Locks; the no-lock fallback uses deduplication, per-request mode checks and non-regressing cursor commits. An already-sent request may finish when pausing. Existing one-tab cautions above describe earlier checkpoints or the standalone editor; see [current supported behavior](MULTIPLE_TABS.md).

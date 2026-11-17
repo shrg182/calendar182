@@ -138,3 +138,13 @@ Browser verification (build first):
 ```sh
 PLAYWRIGHT_PATH=/path/to/playwright node prototype/sync/offline-clients.cjs
 ```
+
+## Multiple Calendar tabs
+
+Same-profile tabs in the integrated Calendar now share saved notes/history and the account's local/computer selection while preserving tab-local unsaved drafts. Reauthentication can refresh other same-account tabs without reload. A request already sent may finish after pausing, but new note requests check the shared stored mode. Separate browser profiles are still required to simulate independent devices. The standalone experiment editor retains its original one-tab restriction.
+
+See [multiple-tab behavior and fallback limits](../../docs/MULTIPLE_TABS.md). Verify after building:
+
+```sh
+PLAYWRIGHT_PATH=/path/to/playwright node prototype/sync/multiple-tabs.cjs
+```

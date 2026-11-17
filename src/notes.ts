@@ -1,7 +1,12 @@
+import {notifyStorage,subscribeStorage} from './storageSignals.ts'
+import type {StorageChange} from './storageSignals.ts'
 export interface Note {date:string;text:string;createdAt:string;updatedAt:string;deleted:boolean;operationId:string;revision?:number}
 let database: Promise<IDBDatabase>|undefined
 let databaseName='calendar182.notes.v1'
 let staging=false
+export function storageScope(){return databaseName}
+export function subscribeNoteChanges(listener:(kind:StorageChange,external:boolean)=>void){return subscribeStorage(databaseName,listener)}
+export function notifySessionChanged(){notifyStorage(databaseName,'session')}
 export function configureComputerStorage(account:string){
   const name=`calendar182.computer-staging.v1:${account}`
   if(database && databaseName!==name)throw new Error('Reload before changing accounts. Local notes are retained.')
@@ -52,7 +57,7 @@ export async function saveNote(date:string,text:string,deleted=false):Promise<No
       // Durable operations are consumed only by the isolated computer build.
       tx.objectStore('outbox').put(note)
     }
-    tx.oncomplete=()=>resolve(note)
+    tx.oncomplete=()=>{notifyStorage(databaseName,'saved');resolve(note)}
     tx.onabort=()=>reject(tx.error||new Error('Could not save. Your draft is still available.'))
   })
 }
@@ -123,7 +128,7 @@ export async function importNotes(data:ImportData,replace=false):Promise<number>
         notes.put(note);outbox.put(note);count++
       }
     }
-    tx.oncomplete=()=>resolve(count)
+    tx.oncomplete=()=>{notifyStorage(databaseName,'saved');resolve(count)}
     tx.onabort=()=>reject(tx.error||new Error('Import cancelled. No changes were saved.'))
   })
 }
@@ -157,7 +162,7 @@ export async function writeComputerSyncEnabled(enabled:boolean):Promise<void>{
   return new Promise((resolve,reject)=>{
     const tx=db.transaction('meta','readwrite')
     tx.objectStore('meta').put({key:'sync-enabled',enabled})
-    tx.oncomplete=()=>resolve()
+    tx.oncomplete=()=>{notifyStorage(databaseName,'mode');resolve()}
     tx.onabort=()=>reject(tx.error||new Error('Could not save storage selection.'))
   })
 }
@@ -196,7 +201,9 @@ export async function applyChanges(page:ChangePage,epoch:string){
     const meta=tx.objectStore('meta').get('sync'),pending=tx.objectStore('outbox').getAll()
     pending.onsuccess=()=>{
       const saved=meta.result as SyncMeta|undefined
-      if(!saved || saved.epoch!==epoch || page.cursor<saved.cursor){tx.abort();return}
+      if(!saved || saved.epoch!==epoch){tx.abort();return}
+      // Another tab may already have committed a newer complete page.
+      if(page.cursor<saved.cursor)return
       const dates=new Set((pending.result as PendingNote[]).map(note=>note.date))
       const history=tx.objectStore('history'),notes=tx.objectStore('notes')
       for(const record of page.changes){
@@ -210,6 +217,6 @@ export async function applyChanges(page:ChangePage,epoch:string){
       }
       tx.objectStore('meta').put({key:'sync',epoch,cursor:page.cursor})
     }
-    tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error||new Error('Could not apply changes; cursor was retained.'))
+    tx.oncomplete=()=>{if(page.changes.length)notifyStorage(databaseName,'notes');resolve()};tx.onabort=()=>reject(tx.error||new Error('Could not apply changes; cursor was retained.'))
   })
 }

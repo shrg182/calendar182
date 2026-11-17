@@ -7,12 +7,14 @@ export function useNotes(){
   const [drafts,setDrafts]=useState<Record<string,string>>({})
   const [ready,setReady]=useState(false),[busy,setBusy]=useState(false)
   const [status,setStatus]=useState('Loading notes…')
+  const [peerChanged,setPeerChanged]=useState(false)
   useEffect(()=>{
     let active=true
     const refresh=()=>readNotes().then(rows=>{if(active){setNotes(Object.fromEntries(rows.map(note=>[note.date,note])));setReady(true);setStatus(previous=>previous==='Loading notes…'?'':previous)}}).catch(()=>{if(active)setStatus('Notes could not be opened. Reload to retry.')})
     void refresh()
     window.addEventListener('calendar-notes-changed',refresh)
-    return ()=>{active=false;window.removeEventListener('calendar-notes-changed',refresh)}
+    const unsubscribe=noteStore.subscribe((kind,external)=>{if(kind==='saved'||kind==='notes'||kind==='refresh'){void refresh();if(external&&kind!=='refresh')setPeerChanged(true)}})
+    return ()=>{active=false;unsubscribe();window.removeEventListener('calendar-notes-changed',refresh)}
   },[])
   const dirty=Object.entries(drafts).some(([key,text])=>text!==(notes[key]?.deleted?'':notes[key]?.text||''))
   useEffect(()=>{
@@ -20,7 +22,7 @@ export function useNotes(){
     if(dirty||busy) window.addEventListener('beforeunload',protect)
     return ()=>window.removeEventListener('beforeunload',protect)
   },[dirty,busy])
-  function edit(key:string,text:string){setDrafts(previous=>({...previous,[key]:text}));setStatus('Unsaved changes')}
+  function edit(key:string,text:string){setDrafts(previous=>({...previous,[key]:text}));setStatus('Unsaved changes');setPeerChanged(false)}
   async function save(key:string,deleted=false){
     if(busy||!ready)return
     const text=drafts[key]??(notes[key]?.deleted?'':notes[key]?.text||'')
@@ -30,6 +32,7 @@ export function useNotes(){
       setNotes(previous=>({...previous,[key]:note}))
       setDrafts(previous=>{const next={...previous};if(deleted||next[key]===text)delete next[key];return next})
       setStatus(deleted?'Deleted on this device. Previous versions are retained for backup export.':'Saved on this device.')
+      setPeerChanged(false)
       window.dispatchEvent(new Event('calendar-note-saved'))
     }catch{setStatus('Could not save. Your draft is still available; copy it before closing.')}
     finally{setBusy(false)}
@@ -59,5 +62,5 @@ export function useNotes(){
     }catch(error){setStatus('Could not complete import. Reload to check saved notes.');throw error}
     finally{setBusy(false)}
   }
-  return {notes,drafts,ready,busy,status,dirty,edit,save,backup,restore}
+  return {notes,drafts,ready,busy,status,dirty,peerChanged,edit,save,backup,restore}
 }

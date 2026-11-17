@@ -6,13 +6,15 @@ export function NoteHistory({date,revision,disabled,dirty,onRestore}:{date:strin
   const [expanded,setExpanded]=useState(false)
   const [snapshot,setSnapshot]=useState<{key:string;versions:Note[];error:string}>({key:'',versions:[],error:''})
   const [choice,setChoice]=useState('')
-  const versionKey=`${date}:${revision}`
+  const [refresh,setRefresh]=useState(0)
+  useEffect(()=>noteStore.subscribe(kind=>{if(kind==='saved'||kind==='notes'||kind==='refresh')setRefresh(value=>value+1)}),[])
+  const versionKey=`${date}:${revision}:${refresh}`
   const {versions,error}=snapshot
   const loading=snapshot.key!==versionKey
   useEffect(()=>{
     if(!expanded||disabled)return
     let active=true
-    readNoteHistory(date).then(rows=>{if(active){setSnapshot({key:versionKey,versions:rows,error:''});setChoice(rows[0]?.operationId||'')}}).catch(()=>{if(active)setSnapshot({key:versionKey,versions:[],error:'History could not be loaded. Close and reopen to retry.'})})
+    readNoteHistory(date).then(rows=>{if(active){setSnapshot({key:versionKey,versions:rows,error:''});setChoice(current=>rows.some(note=>note.operationId===current)?current:rows[0]?.operationId||'')}}).catch(()=>{if(active)setSnapshot({key:versionKey,versions:[],error:'History could not be loaded. Close and reopen to retry.'})})
     return ()=>{active=false}
   },[date,versionKey,expanded,disabled])
   const selected=versions.find(note=>note.operationId===choice)

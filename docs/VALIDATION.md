@@ -108,3 +108,11 @@ All 17 application tests passed, including remembered account/service metadata w
 New offline browser suite passed with real workers on secure loopback: reload offline into saved notes, save/reload offline, reconnect convergence, API cache exclusion, expired-auth local opening/reconnect, failed new-worker install rollback, two-tab waiting update preserving an unsaved draft, saved notes surviving activation and the new shell reopening offline. Full existing Calendar sync/session-recovery browser suite passed with the new banner. All browser test data was temporary.
 
 All 10 Python HTTP/HTTPS service tests passed, including normal CA/hostname verification, refusal without trusted CA, HTTPS origin enforcement, separate Secure/HttpOnly session cookie, and public certificate/profile content limited to the prepared certificate. Retained HTTPS Calendar returned 200 with an explicit trusted CA; downloaded public profile matched local DER with one certificate payload. No trust-store installation or insecure browser flags were used. iPad trust/HTTPS/offline reopening and home-screen installation remain unverified. See OFFLINE_LOADING.md.
+
+### Multiple-tab consistency — 2026-11-17
+
+All 17 application tests, lint/typecheck and ordinary/staging builds passed. A unit assertion verifies an older downloaded page cannot roll back the cursor or resurrect a newer tombstone.
+
+`prototype/sync/multiple-tabs.cjs` passed with real shared-profile tabs and an independent peer, both with BroadcastChannel/Web Locks and with those APIs absent: saved/history refresh, draft preservation, deletion, concurrent writes with one accepted record per operation ID, remote changes through one local tab, shared pause/resume including a new tab, closing the uploader after server commit before acknowledgement then retrying after a later competing write, same-account peer reauthentication and cross-account isolation. All service data and credentials were temporary.
+
+The full independent-device sync/session-recovery and offline/update browser suites also passed. Original navigation, note save/reload/failure/retry/backup, import and history browser suites passed against dev port 5173 using isolated contexts. No physical multiple-tab iPad result is claimed. Python service code was unchanged in this step; its preceding ten-test result remains separate evidence.

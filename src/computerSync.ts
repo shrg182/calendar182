@@ -1,4 +1,4 @@
-import {acknowledgeOperation,applyChanges,syncSnapshot} from './notes.ts'
+import {acknowledgeOperation,applyChanges,syncSnapshot,readComputerSyncEnabled} from './notes.ts'
 import type {ChangePage,RemoteNote} from './notes.ts'
 
 export interface ComputerSession {account:string;epoch:string}
@@ -49,6 +49,7 @@ export async function syncComputer(session:ComputerSession){
   if(current.account!==session.account||current.epoch!==session.epoch)throw new Error('Account or service changed. Preserve local notes and export a backup before investigating.')
   const snapshot=await syncSnapshot(session.epoch)
   for(const operation of snapshot.pending.slice(0,100)){
+    if(!await readComputerSyncEnabled())return {pending:snapshot.pending.length,more:false,paused:true}
     const value=await computerApi('operations',{epoch:session.epoch,operation:{id:operation.operationId,date:operation.date,text:operation.text,deleted:operation.deleted}},session.account)
     const record=remoteNote((value as {record:unknown}).record)
     if(record.id!==operation.operationId||record.date!==operation.date||record.text!==operation.text||record.deleted!==operation.deleted)throw new Error('Acknowledgement mismatch. Pending change retained.')
@@ -56,10 +57,10 @@ export async function syncComputer(session:ComputerSession){
   }
   let cursor=snapshot.cursor,more=true
   for(let i=0;more&&i<20;i++){
+    if(!await readComputerSyncEnabled())return {pending:snapshot.pending.length,more:false,paused:true}
     const page=parseChangePage(await computerApi(`changes?cursor=${cursor}&limit=100`,undefined,session.account),cursor,session.epoch)
-    await applyChanges(page,session.epoch);cursor=page.cursor;more=page.hasMore
+    await applyChanges(page,session.epoch);cursor=(await syncSnapshot(session.epoch)).cursor;more=page.hasMore
   }
   const after=await syncSnapshot(session.epoch)
-  window.dispatchEvent(new Event('calendar-notes-changed'))
-  return {pending:after.pending.length,more}
+  return {pending:after.pending.length,more,paused:false}
 }

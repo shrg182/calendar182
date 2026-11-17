@@ -1,4 +1,4 @@
-import {readNotes,saveNote,exportBackup,importNotes,readNoteHistory} from './notes.ts'
+import {readNotes,saveNote,exportBackup,importNotes,readNoteHistory,subscribeNoteChanges} from './notes.ts'
 
 /** Local persistence remains independent of optional cloud sync/backup providers. */
 export interface NoteStore {
@@ -7,9 +7,10 @@ export interface NoteStore {
   exportBackup: typeof exportBackup
   importNotes: typeof importNotes
   readNoteHistory: typeof readNoteHistory
+  subscribe: typeof subscribeNoteChanges
 }
 
-export const noteStore: NoteStore = {readNotes,saveNote,exportBackup,importNotes,readNoteHistory}
+export const noteStore: NoteStore = {readNotes,saveNote,exportBackup,importNotes,readNoteHistory,subscribe:subscribeNoteChanges}
 
 export interface StorageOption {
   id: string

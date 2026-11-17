@@ -1,10 +1,11 @@
-import {useEffect,useRef,useState} from 'react'
+import {useCallback,useEffect,useRef,useState} from 'react'
 import {ComputerApiError,computerApi,parseSession,syncComputer,verifyReconnectedSession} from './computerSync'
 import type {ComputerSession} from './computerSync'
-import {configureComputerStorage,readComputerSyncEnabled,writeComputerSyncEnabled} from './notes'
+import {configureComputerStorage,readComputerSyncEnabled,writeComputerSyncEnabled,subscribeNoteChanges,notifySessionChanged} from './notes'
 import {ComputerStorageContext} from './computerStorageContext'
 import App from './App'
 import {rememberComputer,rememberedComputer} from './rememberedComputer'
+import {withComputerLock} from './computerLock'
 
 export function ComputerStaging(){
   const [session,setSession]=useState<ComputerSession|null>(null)
@@ -18,6 +19,7 @@ export function ComputerStaging(){
     await rememberComputer(next)
     setLocalAccess(false);setVerifyLocal(false)
     setSession(next)
+    notifySessionChanged()
   }
   useEffect(()=>{
     let active=true
@@ -64,7 +66,7 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
     if(run.current||selectionPending.current||enabled===null||next===enabled)return
     selectionPending.current=true;setChanging(true)
     try{
-      await writeComputerSyncEnabled(next)
+      await withComputerLock(()=>writeComputerSyncEnabled(next))
       setEnabled(next)
       if(next)setWake(value=>value+1)
       setStatus(next?'Computer sync enabled. Pending saved edits will upload.':'Computer sync paused. Notes and pending edits stay on this device.')
@@ -74,8 +76,8 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
   const run=useRef(false)
   const [wake,setWake]=useState(0)
   const consumedWake=useRef(0)
-  async function verifySavedSession(){
-    if(verifying.current||!needsVerification)return
+  const verifySavedSession=useCallback(async()=>{
+    if(verifying.current||(!needsVerification&&!authRequired))return
     verifying.current=true
     try{
       verifyReconnectedSession(await computerApi('session',undefined,session.account),session)
@@ -86,13 +88,13 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
       if(error instanceof ComputerApiError&&error.status===401){setNeedsVerification(false);setStatus('Sign-in expired. Reconnect below; local notes and drafts are retained.')}
       else setStatus(error instanceof Error&&error.message.includes('identity changed')?error.message:'Computer connection unavailable. Local notes and pending edits are retained.')
     }finally{verifying.current=false}
-  }
+  },[needsVerification,authRequired,session,enabled])
   useEffect(()=>{
     if(!needsVerification)return
     const check=()=>{if(navigator.onLine)void verifySavedSession()}
     window.addEventListener('online',check);window.addEventListener('focus',check)
     return ()=>{window.removeEventListener('online',check);window.removeEventListener('focus',check)}
-  })
+  },[needsVerification,verifySavedSession])
   async function reconnect(){
     if(reconnecting||run.current)return
     setReconnecting(true);setReconnectStatus('Reconnecting…')
@@ -100,11 +102,26 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
       verifyReconnectedSession(await computerApi('login',{account:session.account,token:reconnectToken}),session)
       setAuthRequired(false)
       setReconnectStatus('')
+      notifySessionChanged()
       if(enabled){setStatus('Reconnected. Resuming saved changes; unsaved drafts remain on this device.');setWake(value=>value+1)}
       else setStatus('Reconnected. Computer sync remains paused; notes and pending edits stay on this device.')
     }catch(error){setReconnectStatus(error instanceof Error?error.message:'Could not reconnect. Local changes are retained.')}
     finally{setReconnectToken('');setReconnecting(false)}
   }
+  useEffect(()=>{
+    let active=true
+    const unsubscribe=subscribeNoteChanges((kind,external)=>{
+      if(kind==='mode'||kind==='refresh')void readComputerSyncEnabled().then(next=>{
+        if(!active||next===enabled)return
+        setEnabled(next)
+        if(next){setStatus('Computer sync enabled in this browser.');setWake(value=>value+1)}
+        else setStatus('Computer sync paused in this browser. Local notes and pending edits are retained.')
+      }).catch(()=>{if(active)setStatus('Could not refresh storage selection. Local changes are retained.')})
+      if(kind==='saved'&&external)window.dispatchEvent(new Event('calendar-note-saved'))
+      if(kind==='session'&&external)void verifySavedSession()
+    })
+    return ()=>{active=false;unsubscribe()}
+  },[enabled,verifySavedSession])
   useEffect(()=>{
     if(enabled!==true||authRequired)return
     let active=true,timer:ReturnType<typeof setTimeout>,retry=2000,retryAllowed=true
@@ -114,14 +131,16 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
       if(document.hidden&&automatic){timer=setTimeout(tick,15000);return}
       run.current=true;setBusy(true)
       try{
-        // Coordinate open tabs where Web Locks is available. The protocol also
-        // tolerates exact retries; single-tab use is required on insecure LANs.
+        // Web Locks serialize secure-origin tabs. The HTTP fallback relies on
+        // exact retry IDs, transactional cursors and a mode check per request.
         const sync=async()=>{
-          if(!active||selectionPending.current||!await readComputerSyncEnabled())return null
+          if(!active||selectionPending.current)return null
+          if(!await readComputerSyncEnabled())return {pending:0,more:false,paused:true}
           return syncComputer(session)
         }
-        const result=navigator.locks?await navigator.locks.request('calendar-computer-sync',sync):await sync()
-        if(!result){if(active){setEnabled(false);setStatus('Computer sync paused. Notes and pending edits stay on this device.')}return}
+        const result=await withComputerLock(sync)
+        if(!result)return
+        if(result.paused){if(active){setEnabled(false);setStatus('Computer sync paused. Notes and pending edits stay on this device.')}return}
         if(active)setStatus(result.more||result.pending?'Changes pending; sync will continue.':'Saved notes synced. Unsaved drafts stay on this device.')
         retry=result.more||result.pending?250:15000
       }catch(error){
@@ -140,7 +159,7 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
     window.addEventListener('online',kick);window.addEventListener('focus',kick);window.addEventListener('calendar-note-saved',kick);document.addEventListener('visibilitychange',kick)
     return ()=>{active=false;clearTimeout(timer);window.removeEventListener('online',kick);window.removeEventListener('focus',kick);window.removeEventListener('calendar-note-saved',kick);document.removeEventListener('visibilitychange',kick)}
   },[session,wake,automatic,enabled,authRequired])
-  return <ComputerStorageContext.Provider value={{enabled:enabled===true,busy:busy||changing||reconnecting||enabled===null,select}}><aside className="computer-sync" aria-label="Computer synchronization"><strong>Computer sync test · {session.account}</strong><p>Separate test notes. One tab per browser profile. Keep the computer service running.</p><label><input type="checkbox" checked={automatic} disabled={enabled!==true||changing||authRequired} onChange={event=>setAutomatic(event.target.checked)}/> Automatic sync while this page is open</label><button disabled={busy||changing||enabled!==true||authRequired} onClick={()=>setWake(value=>value+1)}>Sync now</button><p role="status">{status}</p>
+  return <ComputerStorageContext.Provider value={{enabled:enabled===true,busy:busy||changing||reconnecting||enabled===null,select}}><aside className="computer-sync" aria-label="Computer synchronization"><strong>Computer sync test · {session.account}</strong><p>Tabs share saved notes and this account’s storage selection. Unsaved drafts stay in their own tab. Keep the computer service running.</p><label><input type="checkbox" checked={automatic} disabled={enabled!==true||changing||authRequired} onChange={event=>setAutomatic(event.target.checked)}/> Automatic sync while this page is open</label><button disabled={busy||changing||enabled!==true||authRequired} onClick={()=>setWake(value=>value+1)}>Sync now</button><p role="status">{status}</p>
     {needsVerification&&<button onClick={()=>void verifySavedSession()}>Check computer connection</button>}
     {authRequired&&!needsVerification&&<form className="computer-login" aria-label="Reconnect computer synchronization" onSubmit={event=>{event.preventDefault();void reconnect()}}>
       <p>Reconnect <strong>{session.account}</strong> without reloading. Your notes, pending edits and unsaved drafts stay in place.</p>

@@ -16,7 +16,7 @@ export function StorageSettings(){
         <span><strong>{option.name}</strong><span>{option.purpose}</span><small>{computer&&option.id==='computer'?(enabled?'Connected in this isolated test build':'Paused — select to resume computer sync'):computer&&option.id==='local'?(enabled?'Local copies retained':'Active'):option.status}</small></span>
       </label>)}
     </fieldset>
-    <p id="storage-availability">Cloud options will become selectable when their connections and safe data transfer are ready. {computer?'Selecting This device pauses computer sync. Selecting Your computer resumes it and uploads pending saved edits. Both choices keep the same account’s local notes, history and drafts; existing computer copies are retained. Your usual Calendar notes remain separate.':'The computer sync experiment is separate from this Calendar.'}</p>
+    <p id="storage-availability">Cloud options will become selectable when their connections and safe data transfer are ready. {computer?'This selection applies to all Calendar tabs for this account in this browser. This device pauses new sync requests; a request already sent may finish. Your computer resumes pending saved edits. Both choices retain local notes, history, drafts and existing computer copies. Your usual Calendar notes remain separate.':'The computer sync experiment is separate from this Calendar.'}</p>
     <p>You can export and import backups below to move saved notes between browsers now.</p>
   </section>
 }
