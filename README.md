@@ -12,6 +12,8 @@ npm ci
 npm run dev
 ```
 
+Open the HTTP address printed by Vite (usually `http://localhost:5173/calendar182/`) and keep the terminal running. Opening `index.html` with a `file://` URL does not run the application: Vite must compile its TypeScript/React modules. Use the same browser and URL consistently; different origins such as `localhost` and `127.0.0.1` have separate saved notes. For a production-build preview, run `npm run build` followed by `npm run preview -- --host 127.0.0.1`, then open `http://127.0.0.1:4173/calendar182/`.
+
 Checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 
 ## GitHub Pages
@@ -25,3 +27,7 @@ To recover earlier text, open a date → Note history → choose a version → U
 ## Project documentation
 
 The application and Git repository root is `calendar182/`. Run development commands from this directory. The nested [`calendar/`](calendar/) folder preserves the moved planning workspace: design briefs, reviews, and early audit snapshots. Current application documentation lives in [`docs/`](docs/); the consolidated development handoff is [`calendar/HANDOFF.md`](calendar/HANDOFF.md).
+
+## Isolated computer-sync test
+
+The ordinary development preview remains local-only. A separate Calendar staging build now connects to the computer-hosted Python sync experiment using isolated account-specific notes. Run `npm run build:computer` and follow the [staging instructions](prototype/sync/README.md#calendar-ui-staging-build--2026-11-17). It uses test credentials and synthetic notes; provider switching and production account handling are not implemented.

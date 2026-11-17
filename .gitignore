@@ -26,3 +26,6 @@ dist-ssr
 # Isolated sync prototype: never commit test credentials, database or sessions
 prototype/sync/.data/
 __pycache__/
+
+# Generated isolated computer-sync Calendar build
+prototype/sync/calendar-dist/

@@ -91,3 +91,32 @@ Owner-reported manual results using a Xiaomi 13 and computer on the same LAN, ac
 These are owner-reported observations, not direct automated inspection of the physical phone. Phone browser/version was not recorded. Earlier automated checks remain separate evidence. The service was subsequently restarted with the same data directory: all 17 accepted operations, the current record, service identity and both unexpired session records were unchanged, database integrity was ok, and the LAN page returned HTTP 200. The owner then confirmed the post-restart test worked as expected: existing device sessions continued working and saved edits synchronized in both directions between the computer and Xiaomi 13. Exact upload timing in the manual reload scenario was not independently observed. Public hosting, production authentication, internet/regional reachability and integration with the public Calendar remain untested or unimplemented.
 
 Separately, the owner confirmed that a note in the public Calendar survived reloading in the same Xiaomi browser. That verifies local persistence only; it does not establish sync for the public application.
+
+## Calendar UI staging build — 2026-11-17
+
+The full Calendar interface now has a separate computer-sync build. It is isolated from the ordinary Calendar and the standalone test editor; use fake notes only. Build from the repository root:
+
+```sh
+npm run build:computer
+python3 prototype/sync/server.py --port 8791 --data-dir prototype/sync/.data/calendar-stage --calendar-dist prototype/sync/calendar-dist
+```
+
+Open `http://127.0.0.1:8791/calendar/`. Privately open `prototype/sync/.data/calendar-stage/test-credentials.json` and connect account-a with its generated token. Use the same account on two separate browser profiles. The service at port 8790 and its original database need not be stopped or changed. Generated staging assets and `.data` files are ignored by Git. Rebuild and reload after source changes. The normal `npm run dev` / public Calendar stays local-only.
+
+For a physical phone test, explicitly add `--host 0.0.0.0 --allow-host YOUR_COMPUTER_LAN_IP` and use `http://YOUR_COMPUTER_LAN_IP:8791/calendar/` on both devices. This is a trusted-LAN HTTP experiment, not public hosting. Do not use router port forwarding. The browser storage origin differs from the loopback address, so notes do not automatically carry over between those URLs.
+
+The build supports Calendar notes, delete/history recovery, local backup export/import, durable pending edits, explicit Sync now and automatic sync. Imported records create fresh operations and will upload to the connected test account; import synthetic backups only. Saved drafts are cleared from the in-page draft map so subsequent remote edits/deletions become visible, while unsaved drafts remain intact. Remote-version timestamps reflect local receipt, not server acceptance time; server revisions decide order.
+
+Verification uses a temporary service/data directory and independent Chrome contexts, without personal profiles or the retained experiment database:
+
+```sh
+PLAYWRIGHT_PATH=/path/to/playwright node prototype/sync/calendar-clients.cjs
+```
+
+Run `npm run build:computer` first. The existing `two-clients.cjs` still checks the standalone editor separately. This integration does not establish production readiness or physical-phone acceptance for the Calendar build. Cloud connectors, safe provider migration, production login, offline app-shell availability and general multi-tab consistency are still outstanding. Use one tab per browser profile. A changed service identity must be investigated with a backup; do not clear pending notes to bypass it.
+
+### Choosing local or computer synchronization
+
+In the Calendar staging build, open Settings → Storage options. Choose **This device** to pause synchronization, or **Your computer** to resume and upload pending saved edits. The selection survives reloading and applies only to that account's staging notes. Notes/history/drafts are kept in place; remote copies are not deleted. Controls wait for an ongoing sync to finish before switching. Choosing This device disables Sync now as well as automatic synchronization. The separate Automatic sync checkbox only controls scheduling and does not change the selected storage mode.
+
+Cloud entries remain disabled, and switching accounts or migrating data between providers is not implemented. Rebuild with `npm run build:computer` and reload the staging page to use these controls.

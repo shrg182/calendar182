@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:computer": "tsc -b && VITE_COMPUTER_SYNC=1 vite build --base=/calendar/ --outDir=prototype/sync/calendar-dist",
     "lint": "oxlint",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty false",

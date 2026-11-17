@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import hashlib
 import hmac
 import json
+import mimetypes
 import os
 from pathlib import Path
 import re
@@ -151,12 +152,29 @@ class Handler(BaseHTTPRequestHandler):
         with self.server.store.connect() as db:
             row = db.execute('SELECT account FROM sessions WHERE hash=? AND expires>?',
                              (hashlib.sha256(token.encode()).hexdigest(), int(time.time()))).fetchone()
-        return row['account'] if row else None
+        account = row['account'] if row else None
+        expected = self.headers.get('X-Calendar-Account')
+        return account if not expected or expected == account else None
 
     def do_GET(self):
         if not self.guard():
             return
         path = urlsplit(self.path)
+        if path.path == '/calendar':
+            self.send_response(302)
+            self.send_header('Location', '/calendar/')
+            self.end_headers()
+            return
+        if path.path.startswith('/calendar/') and self.server.calendar_dist:
+            relative = path.path[len('/calendar/'):] or 'index.html'
+            # Serve only the explicitly built app and its generated assets.
+            allowed = relative == 'index.html' or relative in ('favicon.svg', 'lunar-javascript-LICENSE.txt') or re.fullmatch(r'assets/[A-Za-z0-9_-]+\.(?:js|css)', relative)
+            asset = self.server.calendar_dist / relative
+            if allowed and asset.is_file():
+                self.send(200, asset.read_bytes(), content_type=mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
+            else:
+                self.send(404, {'error': 'Not found'})
+            return
         assets = {'/': ('index.html', 'text/html; charset=utf-8'),
                   '/client.js': ('client.js', 'text/javascript; charset=utf-8'),
                   '/style.css': ('style.css', 'text/css; charset=utf-8')}
@@ -226,7 +244,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send(503, {'error': 'Storage unavailable; retry with the same operation ID'})
 
 
-def make_server(host, port, data, allowed_hosts=()):
+def make_server(host, port, data, allowed_hosts=(), calendar_dist=None):
     data = Path(data)
     data.mkdir(parents=True, exist_ok=True, mode=0o700)
     credentials_path = data / 'test-credentials.json'
@@ -238,6 +256,7 @@ def make_server(host, port, data, allowed_hosts=()):
     server.store = Store(data / 'sync.sqlite3')
     server.credentials = json.loads(credentials_path.read_text())
     server.allowed_hosts = {'127.0.0.1', 'localhost', *allowed_hosts}
+    server.calendar_dist = Path(calendar_dist).resolve() if calendar_dist else None
     server.daemon_threads = True
     return server
 
@@ -248,8 +267,9 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=8790)
     parser.add_argument('--data-dir', default=str(Path(__file__).with_name('.data')))
     parser.add_argument('--allow-host', action='append', default=[])
+    parser.add_argument('--calendar-dist', help='Serve an isolated Calendar build at /calendar/ (synthetic notes only)')
     args = parser.parse_args()
-    server = make_server(args.host, args.port, args.data_dir, args.allow_host)
+    server = make_server(args.host, args.port, args.data_dir, args.allow_host, args.calendar_dist)
     print(f'Test-note prototype listening on {args.host}:{server.server_port}', flush=True)
     print(f'Test credentials file: {Path(args.data_dir).resolve() / "test-credentials.json"}', flush=True)
     try:

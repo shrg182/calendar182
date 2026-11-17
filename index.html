@@ -8,6 +8,15 @@
     <title>Calendar</title>
   </head>
   <body>
+    <section id="file-help" hidden style="max-width:40rem;margin:3rem auto;padding:1rem;font:18px/1.6 system-ui,sans-serif">
+      <h1>Open Calendar through its local server</h1>
+      <p>This source file cannot run Calendar directly. In the calendar182 folder, run <code>npm run dev -- --host 127.0.0.1</code> and open the address printed in the terminal.</p>
+      <p>The usual address is <a href="http://127.0.0.1:5173/calendar182/">http://127.0.0.1:5173/calendar182/</a>. Keep the server running while using Calendar.</p>
+      <p>Use the same browser and address to return to your saved notes. Different addresses have separate browser storage.</p>
+    </section>
+    <script>
+      if (window.location.protocol === 'file:') document.getElementById('file-help').hidden = false;
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

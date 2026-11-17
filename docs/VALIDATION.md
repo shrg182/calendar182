@@ -72,3 +72,15 @@ Separately, the owner confirmed that a note in the public Calendar survived relo
 ## Workers/D1 local feasibility — 2026-11-16
 
 Nine local Miniflare runtime tests passed for the isolated API adapter: lost-ack retry identity, concurrent writes/retries/conflicts, 205-record pagination/account isolation, deletion/recovery, validation, transactional rollback, injected storage failure, local-only identity/origin gates, and persistent runtime restart. See [test scope and limitations](../prototype/cloudflare/README.md). This is local API compatibility evidence, not a hosted or physical-device D1 test. No production authentication or Calendar sync integration was added.
+
+## Calendar computer-sync staging — 2026-11-17
+
+All 15 application tests, lint, TypeScript and ordinary/staging production builds passed; both builds retain the known large-chunk warning. Seven Python service tests passed, including new static asset allowlist and account-bound upload checks. The ordinary Calendar browser suites passed navigation/responsiveness, save/reload/failure/retry/export, import, and history recovery against dev port 5173 using isolated Chrome contexts.
+
+`prototype/sync/calendar-clients.cjs` passed against a temporary real service and generated staging assets: two independent Calendar clients, bidirectional edits, offline late acceptance, dirty-draft protection, deletion/recovery, committed upload with dropped acknowledgement followed by a later competing edit, pending queue across reload, automatic sync, separate-account isolation, cookie-account mismatch refusal and no production/prototype notes database opened. Settings had no horizontal overflow at 320/390/1280px. No real user data was used.
+
+These checks cover the full Calendar staging build, while earlier physical Xiaomi/computer tests covered the standalone editor. Physical-device acceptance for this new build, browser/PWA lifecycle, production authentication, safe provider migration and general multi-tab consistency remain outstanding. No hosted service or cloud integration was deployed.
+
+### Durable local/computer selection
+
+After adding per-account selection metadata and shared React controls, lint, typecheck, all 15 application tests and both builds passed. The full staging browser suite passed again with extra checks: unsaved draft preservation while selecting local mode, disabled Sync now, saved notes and pause surviving reload, no note upload/change requests during paused save/reload/offline/reconnect, unchanged peer data while paused, successful pending upload on resume, and enabled selection surviving reload. Tests use independent Chrome contexts and temporary service data. No physical-device results for these controls are claimed.

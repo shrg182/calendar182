@@ -99,6 +99,33 @@ class HTTPTests(unittest.TestCase):
     def login(self, account):
         return self.request('/api/login', {'account': account, 'token': self.server.credentials[account]})
 
+    def test_calendar_assets_and_account_binding(self):
+        root = Path(self.temp.name) / 'calendar-dist'
+        (root / 'assets').mkdir(parents=True)
+        (root / 'index.html').write_text('<html>Staging Calendar</html>')
+        (root / 'assets' / 'index-test.js').write_text('console.log("test")')
+        (root / 'secret.json').write_text('private')
+        self.server.calendar_dist = root
+        with self.request('/calendar/') as response:
+            self.assertIn(b'Staging Calendar', response.read())
+        with self.request('/calendar/assets/index-test.js') as response:
+            self.assertIn('javascript', response.headers['Content-Type'])
+        for path in ('/calendar/secret.json', '/calendar/../test-credentials.json', '/calendar/assets/../../secret.json'):
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                self.request(path)
+            self.assertEqual(error.exception.code, 404)
+            error.exception.close()
+        epoch = json.load(self.login('account-a'))['epoch']
+        self.login('account-b').close()
+        req = urllib.request.Request(self.base + '/api/operations',
+            data=json.dumps({'epoch': epoch, 'operation': operation(10)}).encode(),
+            headers={'Origin': self.base, 'Content-Type': 'application/json', 'X-Calendar-Account': 'account-a'})
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.client.open(req)
+        self.assertEqual(error.exception.code, 401)
+        error.exception.close()
+        self.assertEqual(self.server.store.changes('account-b', 0, 100)['changes'], [])
+
     def test_real_http_auth_origin_identity_and_isolation(self):
         with self.assertRaises(urllib.error.HTTPError) as error:
             self.request('/api/changes')

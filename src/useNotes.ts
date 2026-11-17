@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react'
-import {readNotes,saveNote,exportBackup,importNotes} from './notes'
+import {noteStore} from './storage'
 import type {ImportData,Note} from './notes'
+const {readNotes,saveNote,exportBackup,importNotes}=noteStore
 export function useNotes(){
   const [notes,setNotes]=useState<Record<string,Note>>({})
   const [drafts,setDrafts]=useState<Record<string,string>>({})
@@ -8,8 +9,10 @@ export function useNotes(){
   const [status,setStatus]=useState('Loading notes…')
   useEffect(()=>{
     let active=true
-    readNotes().then(rows=>{if(active){setNotes(Object.fromEntries(rows.map(note=>[note.date,note])));setReady(true);setStatus('')}}).catch(()=>{if(active)setStatus('Notes could not be opened. Reload to retry.')})
-    return ()=>{active=false}
+    const refresh=()=>readNotes().then(rows=>{if(active){setNotes(Object.fromEntries(rows.map(note=>[note.date,note])));setReady(true);setStatus(previous=>previous==='Loading notes…'?'':previous)}}).catch(()=>{if(active)setStatus('Notes could not be opened. Reload to retry.')})
+    void refresh()
+    window.addEventListener('calendar-notes-changed',refresh)
+    return ()=>{active=false;window.removeEventListener('calendar-notes-changed',refresh)}
   },[])
   const dirty=Object.entries(drafts).some(([key,text])=>text!==(notes[key]?.deleted?'':notes[key]?.text||''))
   useEffect(()=>{
@@ -25,8 +28,9 @@ export function useNotes(){
     try{
       const note=await saveNote(key,text,deleted)
       setNotes(previous=>({...previous,[key]:note}))
-      setDrafts(previous=>({...previous,[key]:note.text}))
+      setDrafts(previous=>{const next={...previous};if(deleted||next[key]===text)delete next[key];return next})
       setStatus(deleted?'Deleted on this device. Previous versions are retained for backup export.':'Saved on this device.')
+      window.dispatchEvent(new Event('calendar-note-saved'))
     }catch{setStatus('Could not save. Your draft is still available; copy it before closing.')}
     finally{setBusy(false)}
   }
@@ -51,6 +55,7 @@ export function useNotes(){
       setNotes(Object.fromEntries(rows.map(note=>[note.date,note])))
       setDrafts({})
       setStatus(`${count} notes imported on this device.`)
+      window.dispatchEvent(new Event('calendar-note-saved'))
     }catch(error){setStatus('Could not complete import. Reload to check saved notes.');throw error}
     finally{setBusy(false)}
   }

@@ -1,13 +1,24 @@
-export interface Note {date:string;text:string;createdAt:string;updatedAt:string;deleted:boolean;operationId:string}
+export interface Note {date:string;text:string;createdAt:string;updatedAt:string;deleted:boolean;operationId:string;revision?:number}
 let database: Promise<IDBDatabase>|undefined
+let databaseName='calendar182.notes.v1'
+let staging=false
+export function configureComputerStorage(account:string){
+  const name=`calendar182.computer-staging.v1:${account}`
+  if(database && databaseName!==name)throw new Error('Reload before changing accounts. Local notes are retained.')
+  databaseName=name;staging=true
+}
+function makeOperationId(){
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('')
+}
 function open():Promise<IDBDatabase>{
   if(!database) database=new Promise((resolve,reject)=>{
-    const request=indexedDB.open('calendar182.notes.v1',1)
+    const request=indexedDB.open(databaseName,1)
     request.onupgradeneeded=()=>{
       const db=request.result
       db.createObjectStore('notes',{keyPath:'date'})
       db.createObjectStore('history',{keyPath:'operationId'})
       db.createObjectStore('outbox',{keyPath:'sequence',autoIncrement:true}).createIndex('operationId','operationId',{unique:true})
+      if(staging)db.createObjectStore('meta',{keyPath:'key'})
     }
     request.onerror=()=>{database=undefined;reject(request.error)}
     request.onblocked=()=>{database=undefined;reject(new Error('Close other Calendar tabs and retry.'))}
@@ -35,10 +46,10 @@ export async function saveNote(date:string,text:string,deleted=false):Promise<No
     request.onsuccess=()=>{
       const previous=request.result as Note|undefined
       const now=new Date().toISOString()
-      note={date,text:deleted?'':text,createdAt:previous?.createdAt||now,updatedAt:now,deleted,operationId:crypto.randomUUID()}
+      note={date,text:deleted?'':text,createdAt:previous?.createdAt||now,updatedAt:now,deleted,operationId:makeOperationId()}
       if(previous) tx.objectStore('history').put(previous)
       notes.put(note)
-      // Durable local operations; no provider is connected yet.
+      // Durable operations are consumed only by the isolated computer build.
       tx.objectStore('outbox').put(note)
     }
     tx.oncomplete=()=>resolve(note)
@@ -73,7 +84,7 @@ export function parseBackup(value:unknown):ImportData{
       if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(parsed.getTime())||parsed.toISOString().slice(0,10)!==date||date<'1901-01-01'||date>'2100-12-31')throw new Error('Invalid note date.')
       if(text.length>20000||(!deleted&&!text.trim())||(deleted&&text!==''))throw new Error('Invalid note text.')
       if(typeof item.createdAt!=='string'||typeof item.updatedAt!=='string'||!Number.isFinite(Date.parse(item.createdAt))||!Number.isFinite(Date.parse(item.updatedAt)))throw new Error('Invalid note timestamp.')
-      const operationId=legacy?crypto.randomUUID():item.operationId
+      const operationId=legacy?makeOperationId():item.operationId
       if(typeof operationId!=='string'||!operationId.length||operationId.length>128)throw new Error('Invalid operation ID.')
       return {date,text,deleted,createdAt:item.createdAt,updatedAt:item.updatedAt,operationId}
     })
@@ -108,7 +119,7 @@ export async function importNotes(data:ImportData,replace=false):Promise<number>
         const previous=current.get(imported.date)
         if(previous&&!replace)continue
         if(previous)history.put(previous)
-        const note={...imported,operationId:crypto.randomUUID(),updatedAt:new Date().toISOString()}
+        const note={...imported,operationId:makeOperationId(),revision:undefined,updatedAt:new Date().toISOString()}
         notes.put(note);outbox.put(note);count++
       }
     }
@@ -121,7 +132,84 @@ export async function readNoteHistory(date:string):Promise<Note[]>{
   const db=await open()
   return new Promise((resolve,reject)=>{
     const tx=db.transaction('history','readonly'),request=tx.objectStore('history').getAll()
-    tx.oncomplete=()=>resolve((request.result as Note[]).filter(note=>note.date===date&&!note.deleted).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)))
+    tx.oncomplete=()=>resolve((request.result as Note[]).filter(note=>note.date===date&&!note.deleted).sort((a,b)=>(b.revision??Number.MAX_SAFE_INTEGER)-(a.revision??Number.MAX_SAFE_INTEGER)||b.updatedAt.localeCompare(a.updatedAt)))
     tx.onabort=()=>reject(tx.error||new Error('Could not read note history.'))
+  })
+}
+
+export interface RemoteNote {id:string;date:string;text:string;deleted:boolean;revision:number}
+export interface ChangePage {epoch:string;cursor:number;hasMore:boolean;changes:RemoteNote[]}
+interface PendingNote extends Note {sequence:number}
+interface SyncMeta {key:'sync';epoch:string;cursor:number}
+function requireStaging(){if(!staging)throw new Error('Computer sync requires the isolated staging database.')}
+export async function readComputerSyncEnabled():Promise<boolean>{
+  requireStaging()
+  const db=await open()
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('meta','readonly'),request=tx.objectStore('meta').get('sync-enabled')
+    tx.oncomplete=()=>resolve(request.result?.enabled!==false)
+    tx.onabort=()=>reject(tx.error||new Error('Could not load storage selection.'))
+  })
+}
+export async function writeComputerSyncEnabled(enabled:boolean):Promise<void>{
+  requireStaging()
+  const db=await open()
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('meta','readwrite')
+    tx.objectStore('meta').put({key:'sync-enabled',enabled})
+    tx.oncomplete=()=>resolve()
+    tx.onabort=()=>reject(tx.error||new Error('Could not save storage selection.'))
+  })
+}
+export async function syncSnapshot(epoch:string){
+  requireStaging()
+  const db=await open()
+  return new Promise<{pending:PendingNote[];cursor:number}>((resolve,reject)=>{
+    const tx=db.transaction(['meta','outbox'],'readwrite')
+    const meta=tx.objectStore('meta').get('sync'),pending=tx.objectStore('outbox').getAll()
+    let cursor=0,mismatch=false
+    meta.onsuccess=()=>{
+      const saved=meta.result as SyncMeta|undefined
+      if(saved && saved.epoch!==epoch){mismatch=true;tx.abort();return}
+      cursor=saved?.cursor||0
+      if(!saved)tx.objectStore('meta').put({key:'sync',epoch,cursor})
+    }
+    tx.oncomplete=()=>resolve({pending:pending.result,cursor})
+    tx.onabort=()=>reject(new Error(mismatch?'Service identity changed. Export your staging backup before continuing.':'Could not read pending changes.'))
+  })
+}
+export async function acknowledgeOperation(operation:PendingNote){
+  requireStaging()
+  const db=await open()
+  return new Promise<void>((resolve,reject)=>{
+    const tx=db.transaction('outbox','readwrite'),store=tx.objectStore('outbox'),request=store.get(operation.sequence)
+    request.onsuccess=()=>{if(request.result?.operationId===operation.operationId)store.delete(operation.sequence)}
+    tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error||new Error('Could not acknowledge operation.'))
+  })
+}
+export async function applyChanges(page:ChangePage,epoch:string){
+  requireStaging()
+  if(page.epoch!==epoch)throw new Error('Service identity changed. Preserve your local notes.')
+  const db=await open()
+  return new Promise<void>((resolve,reject)=>{
+    const tx=db.transaction(['notes','history','outbox','meta'],'readwrite')
+    const meta=tx.objectStore('meta').get('sync'),pending=tx.objectStore('outbox').getAll()
+    pending.onsuccess=()=>{
+      const saved=meta.result as SyncMeta|undefined
+      if(!saved || saved.epoch!==epoch || page.cursor<saved.cursor){tx.abort();return}
+      const dates=new Set((pending.result as PendingNote[]).map(note=>note.date))
+      const history=tx.objectStore('history'),notes=tx.objectStore('notes')
+      for(const record of page.changes){
+        const old=history.get(record.id)
+        old.onsuccess=()=>{
+          const now=new Date().toISOString()
+          const note:Note={date:record.date,text:record.text,deleted:record.deleted,operationId:record.id,revision:record.revision,createdAt:old.result?.createdAt||now,updatedAt:old.result?.updatedAt||now}
+          history.put(note)
+          if(!dates.has(note.date))notes.put(note)
+        }
+      }
+      tx.objectStore('meta').put({key:'sync',epoch,cursor:page.cursor})
+    }
+    tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error||new Error('Could not apply changes; cursor was retained.'))
   })
 }

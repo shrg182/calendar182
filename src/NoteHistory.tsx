@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react'
-import {readNoteHistory} from './notes'
+import {noteStore} from './storage'
 import type {Note} from './notes'
+const {readNoteHistory}=noteStore
 export function NoteHistory({date,revision,disabled,dirty,onRestore}:{date:string;revision:string;disabled:boolean;dirty:boolean;onRestore:(text:string)=>void}){
   const [expanded,setExpanded]=useState(false)
   const [snapshot,setSnapshot]=useState<{key:string;versions:Note[];error:string}>({key:'',versions:[],error:''})
