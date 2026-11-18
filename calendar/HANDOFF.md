@@ -6,7 +6,7 @@ Updated: 2026-11-17 (America/Detroit). User last reported 2% quota remaining. Th
 
 - The owner decided external cloud storage and a hosted backend are not required at this stage if the current computer-hosted sync meets their needs. Cloudflare/D1 remains an isolated feasibility experiment; do not resume cloud provisioning or identity-provider selection as the default next task.
 - The owner subsequently requested that users choose their storage provider and be able to switch later. This is an application requirement, not selection of a particular provider. Keep the free-services-only constraint.
-- Storage groundwork, isolated Calendar/computer-sync integration and durable local/computer selection were committed and pushed to `sync-prototype` as `bd6b737`. Physical-device documentation was pushed as ba1cc79. In-page session recovery was committed and pushed as 224d8fc on sync-prototype; its physical-test results were pushed as 716a6c9. Offline-loading/local-HTTPS work was committed and pushed as ed5610b; iPad certificate trust/testing is deferred. Multiple-tab consistency is implemented/tested and preserved in the subsequent sync-prototype update. Main is unchanged. No public application deployment was changed.
+- Storage groundwork, isolated Calendar/computer-sync integration and durable local/computer selection were committed and pushed to `sync-prototype` as `bd6b737`. Physical-device documentation was pushed as ba1cc79. In-page session recovery was committed and pushed as 224d8fc on sync-prototype; its physical-test results were pushed as 716a6c9. Offline-loading/local-HTTPS work was committed and pushed as ed5610b; iPad certificate trust/testing is deferred. Multiple-tab consistency was committed and pushed as b5a7dee; this documentation update records its manual four-tab/iPad observations. Main is unchanged. No public application deployment was changed.
 - Ordinary Calendar remains local-only. The isolated staging Calendar now enables Settings → This device (pause sync) and Your computer (resume sync), with a per-account durable selection. OneDrive, Google Drive and Dropbox remain unavailable. The integrated Calendar now has automated coverage plus owner-reported computer/iPad Chrome results; older Xiaomi results apply to the standalone editor.
 - `src/storage.ts` defines the common local NoteStore interface and provider availability registry; `src/StorageSettings.tsx` renders the panel. `src/useNotes.ts` and `src/NoteHistory.tsx` use that interface. `src/App.tsx` and `src/App.css` include the new panel and styling. Existing IndexedDB data and its database name are preserved.
 - `docs/STORAGE_OPTIONS.md` records the remaining requirements: connect providers, show their roles, preview destination data, copy and verify before activation, preserve notes/history/tombstones/pending edits, recover from interrupted transfers, isolate accounts, coordinate tabs, and retain the old provider's data until explicit deletion. Local/computer sync-mode selection is implemented in staging; cloud connectors and provider-to-provider migration are not. Do not describe local/computer selection as finished cloud switching.
@@ -330,3 +330,39 @@ Next: preserve multiple-tab implementation on sync-prototype and optionally guid
 ## Multiple-tab repository checkpoint — 2026-11-17
 
 After all relevant checks passed, preserve the completed tab implementation/tests/docs with commit subject `feat: keep Calendar tabs consistent without losing drafts`. Offline prerequisite ed5610b is already pushed. This checkpoint includes only application/test/documentation changes; no generated keys, certificates or test data. Main/public deployment and device trust settings remain unchanged. Earlier local/uncommitted references describe the development checkpoint. Next optional physical check: save/reopen two same-account tabs in the existing HTTP Calendar, verify saved-note fan-out, draft preservation and shared local/computer selection.
+
+## Manual shared-tab acceptance started — 2026-11-17
+
+Owner authorized proceeding after b5a7dee was pushed. Confirmed HTTP staging listener on port 8791 and clean working tree, then instructed two same-profile computer Chrome tabs, account-a, November 17, save "Shared tab test 1" in Tab 1. Owner reported four tabs showed that text without reload or Sync now. Record as successful owner-reported four-tab saved-note fan-out; device/browser identity was not restated in the response. Next: leave an unsaved draft in Tab 2, save different text in Tab 1 and verify draft retained only in Tab 2 while other tabs receive the saved text. Do not claim all manual multi-tab acceptance complete. Certificate setup remains deferred.
+
+## Manual four-tab draft observation — 2026-11-17
+
+Owner confirmed expected behavior for the prepared Tab 2 unsaved draft vs Tab 1 saved change: Tab 2 kept "Private draft in Tab 2", while the other three tabs showed "Shared tab test 2". This establishes owner-reported draft preservation without implicit save during peer updates. Next: explicitly Save note in Tab 2 and verify all four tabs converge to that text; then test shared local/computer selection. Manual results remain documentation-only changes after b5a7dee.
+
+## Manual four-tab explicit-save observation — 2026-11-17
+
+Owner confirmed expected four-tab convergence after explicitly saving "Private draft in Tab 2". Manual shared-tab checks now cover saved-note fan-out, unsaved draft preservation during peer changes, and explicit-save convergence. Next: select Settings → This device in one tab and confirm all four tabs reflect local-only mode with Sync now disabled. Then resume via another tab. Certificate trust remains deferred.
+
+## Manual shared-pause observation — 2026-11-17
+
+Owner confirmed selecting This device in Tab 1 updated all four tabs and disabled Sync now in each. Next: while still paused, save a synthetic note in one tab and check it appears across local tabs but not on the independent iPad/browser; then select Your computer in a different tab and verify all tabs resume and the independent device receives the pending edit. No new device trust is needed.
+
+## Manual paused-local-sharing observation — 2026-11-17
+
+Owner confirmed "Four tabs paused test" saved in Tab 1 appeared across the four local tabs while the independent iPad remained unchanged, under the instructed computer-sync-enabled iPad condition. Shared local data and paused outbound propagation are owner-reported successful. Next: in Tab 2 select Your computer, confirm all four tabs reflect it with Sync now enabled once idle, and verify the iPad receives the saved paused text.
+
+## Four-tab resume/iPad delivery investigation — 2026-11-17
+
+Owner reported iPad did not show the paused-test text after the resume instruction. Read-only diagnostics initially showed no marker accepted and current November 17 revision 18; subsequent checks showed marker accepted and current at revision 20, not deleted. No service restart, forced sync, note mutation or code change was made. The delay/intervening user actions are unknown. Source upload has now reached the server; iPad receipt is pending. Async question asks all-four selection and exact Tab 2 sync status. Latest instruction: keep iPad Calendar visible up to 20 seconds, then tap Sync now if absent and report its status, without reloading or clearing its note. Do not assume a client bug or mark physical resume complete yet.
+
+## Four-tab/iPad final observation — 2026-11-17
+
+Owner reported that after saving the text in Tab 2, all four tabs and iPad showed the same text. Answered yes to the async all-four Your computer selection question; exact status was not provided. Post-resume explicit-save convergence is owner-reported successful. No implementation change was required or made. Do not label the earlier resume-only delay as fixed or fully explained: the extra Save prevents an isolated conclusion about automatic upload of the original paused operation. Automated resume coverage remains separate.
+
+Manual multiple-tab checks now cover four-tab saved refresh, draft privacy during peer writes, explicit-save convergence, shared local-only settings/disabled controls, local sharing with no iPad propagation while paused, shared resume selection and final four-tab/iPad convergence after Save. Results in HANDOFF and MULTIPLE_TABS remain local/uncommitted after b5a7dee. Next preserve these observations; optionally isolate resume-only behavior later if needed, without treating it as an established code defect.
+
+## Manual tab-record checkpoint and controlled resume scope — 2026-11-17
+
+Owner authorized the proposed next steps: preserve the manual four-tab records, then isolate resume-only delivery before moving on to backup/recovery. This documentation checkpoint includes HANDOFF, MULTIPLE_TABS and VALIDATION only, on sync-prototype. Earlier uncommitted/pending observations are historical. No code, credentials, data, main branch or deployment change is part of the checkpoint.
+
+Next controlled test, not yet performed: in computer Tab 1 select This device; on November 17 replace the test note with "Resume-only check 1" and explicitly Save. Require confirmation of the Saved on this device status and local-tab visibility before resuming. Then select Your computer from Tab 2 with automatic sync enabled on the receiving iPad; do not Save again, reload or press Sync now during the observation. Inspect server acceptance read-only to distinguish upload from download if needed. Keep iPad visible and confirm exact text. Do not mark this isolated scenario passed before observing it.

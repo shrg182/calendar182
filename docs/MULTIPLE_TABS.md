@@ -1,6 +1,6 @@
 # Calendar tabs in one browser
 
-Implemented on sync-prototype. Automated shared-profile coverage passed; physical iPad multi-tab acceptance is pending. iPad certificate installation/offline testing remains deferred.
+Implemented on sync-prototype. Automated shared-profile coverage passed. The owner reported automatic saved-text refresh across four tabs during the guided computer/Chrome check; subsequent guided checks also confirmed draft protection and shared local/computer selection, as recorded below. The device/browser identity was not restated in the reply, and iPad multi-tab acceptance is not established. iPad certificate installation/offline testing remains deferred.
 
 ## User behavior
 
@@ -33,3 +33,33 @@ PLAYWRIGHT_PATH=/path/to/playwright node prototype/sync/multiple-tabs.cjs
 The test uses real same-profile tabs and an independent peer browser, all on temporary service data. It runs once with BroadcastChannel/Web Locks, then once with those APIs deliberately absent to exercise storage-event/no-lock behavior. It checks saved-note/history refresh, private drafts, deletion, concurrent saves/sync with unique accepted operations, remote downloads reaching other local tabs, shared pause/resume/new-tab state, source closure after commit before acknowledgement followed by a later competing remote edit, peer session recovery, and account/database isolation.
 
 All 17 application tests (including stale-page/tombstone/cursor protection), lint/typecheck and ordinary/staging builds passed. The independent-device synchronization/session suite, offline/update suite and ordinary navigation/notes/import/history browser suites passed. Service code was unchanged from the preceding offline/HTTPS checkpoint; its ten tests were not rerun for these client-only changes. The ordinary build now includes local tab refresh but no worker registration or automatic cloud sync; main/public deployment remain unchanged.
+
+## Manual four-tab observation — 2026-11-17
+
+On implementation b5a7dee, following instructions to use same-profile computer Chrome tabs at the HTTP Calendar URL, the owner reported that four tabs showed "Shared tab test 1" without reloading or Sync now. Record as owner-reported successful saved-note fan-out across four tabs. Exact device/browser version was not recorded or restated in the report. Unsaved-draft protection, shared mode selection and the remaining manual scenarios are not yet established by this observation. Next: leave an unsaved draft in one tab, save different text in another and verify separation.
+
+## Manual draft protection — 2026-11-17
+
+After instructions to type "Private draft in Tab 2" without saving there, then save "Shared tab test 2" in Tab 1, the owner confirmed expected behavior: Tab 2 retained its private draft while the other three tabs displayed the new saved text. Record as owner-reported draft protection and saved-note refresh across the four-tab session. Explicitly saving that draft and verifying four-tab convergence is the next pending check.
+
+## Manual explicit draft save — 2026-11-17
+
+After explicitly saving the prepared draft in Tab 2, the owner confirmed all four tabs showed "Private draft in Tab 2" as expected. Record as owner-reported four-tab convergence after explicit Save; the earlier unsaved draft had remained private. Shared local/computer selection is the next pending manual check.
+
+## Manual shared local-only selection — 2026-11-17
+
+After selecting Settings → This device in Tab 1, the owner confirmed that all four tabs reflected This device and had Sync now disabled. Record as owner-reported shared local-only preference and disabled manual sync controls. Resuming from another tab and syncing an edit saved while paused remain pending.
+
+## Manual local sharing while paused — 2026-11-17
+
+Following instructions to save "Four tabs paused test" in Tab 1 with local-only selected, while the independent iPad remained open with computer sync enabled, the owner confirmed expected behavior: all four local tabs showed the saved edit and the iPad stayed unchanged. Record as owner-reported local shared data with paused outbound propagation. Resuming from a different tab and independent-device convergence is the next pending check.
+
+## Manual resume delivery investigation — 2026-11-17
+
+Asked to resume Your computer from Tab 2 and check the iPad, owner reported the iPad did not show "Four tabs paused test." The first read-only server check found no accepted operation containing that marker and November 17 at revision 18. A subsequent read-only check found it accepted, and the current November 17 record contained the marker at revision 20 (not deleted). Upload therefore arrived during investigation; no code/data mutation was made. Exact intervening user actions and elapsed time were not established. iPad receipt is still unconfirmed. Requested foregrounding iPad for up to 20 seconds, then Sync now and its exact status if still missing, without reloading/clearing possible drafts. Also asked whether all four source tabs show Your computer and for Tab 2's status. Do not mark resume/independent-device convergence passed until observed.
+
+## Manual final convergence after Save — 2026-11-17
+
+Owner reported: "After saved the text in Tab 2, all four tabs and iPad show the same text." The asynchronous answer "yes" also confirmed the all-four Your computer selection; no exact sync-status text was supplied. Record as owner-reported successful post-resume explicit Save and convergence across the four local tabs and independent iPad.
+
+The preceding resume-only delay was not isolated: an extra Save occurred before final convergence, and the marker reached the server during investigation. Do not claim that automatic upload of the original already-saved paused operation on resume was independently confirmed by this manual check, or that a code fix was made. Automated tests separately cover pending upload on resume. Manual results establish saved-text sharing, private-draft protection and explicit-save sharing, shared pause selection/disabled controls, local-only sharing without iPad propagation, shared resume selection and post-resume saved-edit convergence.
