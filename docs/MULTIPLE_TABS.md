@@ -2,6 +2,10 @@
 
 Implemented on sync-prototype. Automated shared-profile coverage passed. The owner reported automatic saved-text refresh across four tabs during the guided computer/Chrome check; subsequent guided checks also confirmed draft protection and shared local/computer selection, as recorded below. The device/browser identity was not restated in the reply, and iPad multi-tab acceptance is not established. iPad certificate installation/offline testing remains deferred.
 
+## Current manual result — 2026-11-18
+
+The guided four-tab/iPad checks now include successful resume-only delivery by owner report: the saved paused edit reached the iPad after selecting Your computer, with no additional Save, reload or Sync now instructed. This is a new controlled result; it does not establish the cause of the earlier delayed observation. The initial claim that the iPad changed while paused was explicitly corrected by the owner. No code fix was needed.
+
 ## User behavior
 
 - Tabs on the same origin and account share saved notes, deletions, retained history and pending edits. A saved change refreshes other tabs without requiring reload or Sync now.
@@ -63,3 +67,17 @@ Asked to resume Your computer from Tab 2 and check the iPad, owner reported the 
 Owner reported: "After saved the text in Tab 2, all four tabs and iPad show the same text." The asynchronous answer "yes" also confirmed the all-four Your computer selection; no exact sync-status text was supplied. Record as owner-reported successful post-resume explicit Save and convergence across the four local tabs and independent iPad.
 
 The preceding resume-only delay was not isolated: an extra Save occurred before final convergence, and the marker reached the server during investigation. Do not claim that automatic upload of the original already-saved paused operation on resume was independently confirmed by this manual check, or that a code fix was made. Automated tests separately cover pending upload on resume. Manual results establish saved-text sharing, private-draft protection and explicit-save sharing, shared pause selection/disabled controls, local-only sharing without iPad propagation, shared resume selection and post-resume saved-edit convergence.
+
+## Controlled resume check: initial discrepancy — 2026-11-17
+
+After the paused-save instructions for "Resume-only check 1", owner reported all four tabs and iPad showed the text. Asked to inspect computer Tab 1 without changing it, owner confirmed This device was selected. Read-only server checks found no accepted operation containing that marker, including normalized comparison ignoring spacing/punctuation; latest revision was 21 and integrity was ok. This is consistent with source pause but does not explain the reported iPad display. The independent iPad URL/date/exact note text must be verified. Do not resume, clear drafts, claim a pause failure, or mark the isolated resume test passed yet. No implementation or server-data changes were made.
+
+## Controlled paused-save clarification — 2026-11-17
+
+Owner clarified: "No, iPad didn't change. I misread it." This corrects the preceding report that the iPad showed "Resume-only check 1" while paused. Combined with Tab 1's confirmed This device selection, "Saved on this device" status and no marker on the server, the paused-save setup is now consistent: local tabs show the saved marker while the independent iPad retains its previous note. Resume without another Save is the next pending observation. No code fix or data mutation was needed.
+
+## Controlled resume-only delivery confirmed — 2026-11-18
+
+After the corrected paused-save setup, instructed selecting Your computer in computer Tab 2 and observing the iPad with automatic sync enabled for up to 20 seconds, without another Save/reload/Sync now. Owner replied "Yes, it shows the same," confirming the iPad displayed "Resume-only check 1." Record as owner-reported automatic delivery of the already-saved paused edit on resume. No exact duration was measured; no implementation or server-data fix was made.
+
+The guided manual sequence now covers four-tab saved refresh, private draft protection, explicit draft-save convergence, shared local-only settings, local sharing without iPad propagation while paused, and controlled resume-only iPad delivery. Source closure, conflicting writes and account-isolation evidence remain automated, not physical checks. Earlier unresolved notes describe the intermediate investigation.
