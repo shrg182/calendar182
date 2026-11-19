@@ -109,6 +109,10 @@ def backup(source, directory, keep=168, minimum_age=0):
 
 def restore(snapshot, destination):
     snapshot, destination = Path(snapshot).resolve(), Path(destination).absolute()
+    if snapshot.is_dir():
+        from backup_copies import verify_copy
+        verify_copy(snapshot)
+        snapshot = snapshot / 'snapshot.sqlite3'
     with readonly(snapshot) as db:
         expected = validate(db)
     # Never replace a running database, existing directory, or browser data.
@@ -134,13 +138,15 @@ def restore(snapshot, destination):
 
 
 class BackupRunner:
-    def __init__(self, source, directory, interval=3600, keep=168):
+    def __init__(self, source, directory, interval=3600, keep=168, copy_root=None):
         if interval <= 0 or keep < 1:
             raise ValueError('Invalid backup interval or retention')
         self.source, self.directory, self.interval, self.keep = source, directory, interval, keep
         self.stop = threading.Event()
         self.last_success = None
         self.failed = False
+        self.copy_root = copy_root
+        self.copy_failed = False
         self.thread = threading.Thread(target=self.run, name='calendar-backup', daemon=True)
 
     def run_once(self):
@@ -152,6 +158,16 @@ class BackupRunner:
         except (OSError, ValueError, sqlite3.Error, TimeoutError):
             self.failed = True
             print('Calendar backup failed; existing snapshots retained. Check local backup storage.', flush=True)
+        if self.copy_root:
+            try:
+                from backup_copies import export_copy
+                available = snapshots(self.directory)
+                if available:
+                    export_copy(available[-1], self.copy_root)
+                self.copy_failed = False
+            except (OSError, ValueError, sqlite3.Error):
+                self.copy_failed = True
+                print('Calendar backup copy unavailable; local snapshots retained. Check the selected destination.', flush=True)
 
     def run(self):
         while not self.stop.is_set():
@@ -176,10 +192,22 @@ if __name__ == '__main__':
     recover = commands.add_parser('restore')
     recover.add_argument('--snapshot', required=True)
     recover.add_argument('--destination', required=True, help='New directory only; existing paths are refused')
+    export = commands.add_parser('copy')
+    export.add_argument('--snapshot', required=True)
+    export.add_argument('--root', required=True, help='Existing external-drive/cloud-folder root selected by the owner')
+    verify = commands.add_parser('verify-copy')
+    verify.add_argument('--bundle', required=True)
     args = parser.parse_args()
     if args.command == 'create':
         result = backup(args.source, args.directory, args.keep)
         print(f'Verified snapshot: {result}' if result else 'Another snapshot is already in progress; retry later.')
-    else:
+    elif args.command == 'restore':
         result = restore(args.snapshot, args.destination)
         print(f'Restored {result["operations"]} operations and {result["records"]} records to a new directory. Service identity rotated; sign-in sessions cleared.')
+    elif args.command == 'copy':
+        from backup_copies import export_copy
+        result = export_copy(args.snapshot, args.root)
+        print(f'Verified local destination copy: {result}' if result else 'Another copy is in progress; retry later.')
+    else:
+        from backup_copies import verify_copy
+        print(f'Copy verified: {verify_copy(args.bundle)}')

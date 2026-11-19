@@ -263,7 +263,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send(503, {'error': 'Storage unavailable; retry with the same operation ID'})
 
 
-def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile=None, keyfile=None, ca_cert=None, backup_interval=None, backup_keep=168):
+def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile=None, keyfile=None, ca_cert=None, backup_interval=None, backup_keep=168, backup_copy_root=None):
     if (backup_interval is not None and backup_interval < 0) or backup_keep < 1:
         raise ValueError('Invalid backup interval or retention')
     if bool(certfile) != bool(keyfile):
@@ -296,7 +296,7 @@ def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile
     server.calendar_dist = Path(calendar_dist).resolve() if calendar_dist else None
     server.daemon_threads = True
     if backup_interval:
-        server.backup_runner = BackupRunner(data / 'sync.sqlite3', data / 'backups', backup_interval, backup_keep)
+        server.backup_runner = BackupRunner(data / 'sync.sqlite3', data / 'backups', backup_interval, backup_keep, backup_copy_root)
         server.backup_runner.start()
     return server
 
@@ -313,10 +313,11 @@ if __name__ == '__main__':
     parser.add_argument('--ca-cert', help='Public PEM CA certificate to offer at /calendar/local-ca.cer')
     parser.add_argument('--backup-interval', type=int, default=3600, help='Automatic snapshot interval in seconds; 0 disables')
     parser.add_argument('--backup-keep', type=int, default=168, help='Number of verified snapshots retained')
+    parser.add_argument('--backup-copy-root', help='Optional existing external-drive/cloud folder chosen by the owner; never created automatically')
     args = parser.parse_args()
     if args.backup_interval < 0 or args.backup_keep < 1:
         parser.error('Backup interval must be nonnegative and retention at least 1')
-    server = make_server(args.host, args.port, args.data_dir, args.allow_host, args.calendar_dist, args.certfile, args.keyfile, args.ca_cert, args.backup_interval, args.backup_keep)
+    server = make_server(args.host, args.port, args.data_dir, args.allow_host, args.calendar_dist, args.certfile, args.keyfile, args.ca_cert, args.backup_interval, args.backup_keep, args.backup_copy_root)
     print(f'Test-note prototype listening on {args.host}:{server.server_port}', flush=True)
     print(f'Test credentials file: {Path(args.data_dir).resolve() / "test-credentials.json"}', flush=True)
     print(f'Automatic snapshot interval: {args.backup_interval}s; retained snapshots: {args.backup_keep}' if args.backup_interval else 'Automatic snapshots disabled', flush=True)

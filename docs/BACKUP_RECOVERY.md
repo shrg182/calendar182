@@ -53,3 +53,7 @@ Six new backup tests passed: live WAL/concurrent writes, private file permission
 A retained-data drill created a verified snapshot of 25 accepted operations/one current record and restored it into a separate ignored directory. Restored epoch differed, restored sessions were empty, operation/current counts matched, and the live epoch/operation/session counts were unchanged. Local evidence is `prototype/sync/.data/calendar-stage/last-backup-drill.json` (ignored). The live service was never restored/replaced.
 
 Both retained staging services were restarted with default hourly/168 retention scheduling. HTTP and CA-verified HTTPS Calendar URLs returned 200; the live epoch still matched the pre-restart snapshot and live/snapshot operation counts were both 25. Device trust settings and main/public deployment were unchanged.
+
+## Optional destination copies
+
+The new `copy` / `verify-copy` commands and `--backup-copy-root` support verified bundles in an explicitly selected existing external-drive or cloud-folder root. This feature is disabled until a destination is chosen. It does not silently select the discovered OneDrive folder. Missing roots are not created and local backups continue if copying is unavailable. Bundle restore validates the checksum before the existing new-directory/epoch-rotation workflow. See [destination-copy workflow and limits](BACKUP_COPIES.md).
