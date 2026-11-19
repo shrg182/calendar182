@@ -148,3 +148,9 @@ See [multiple-tab behavior and fallback limits](../../docs/MULTIPLE_TABS.md). Ve
 ```sh
 PLAYWRIGHT_PATH=/path/to/playwright node prototype/sync/multiple-tabs.cjs
 ```
+
+## Automatic database snapshots
+
+The command-line service now creates verified local SQLite snapshots about hourly while running and retains up to 168. The default directory is `<data-dir>/backups/`; current staging uses `.data/calendar-stage/backups/`. HTTP/HTTPS processes coordinate through a shared process lock. `--backup-interval 0` disables; `--backup-interval` and `--backup-keep` configure cadence/retention. Startup and subsequent checks do not require restarting for each backup.
+
+Manual snapshots and safe restore-to-new-directory commands are documented in [backup/recovery](../../docs/BACKUP_RECOVERY.md). Restores always rotate the service identity and clear sessions, because a snapshot may predate acknowledged writes. They never overwrite the live database. Current browser outboxes/drafts must be preserved and reviewed before any actual recovery cutover. Credentials/keys are separate; same-disk snapshots are not off-device disaster recovery. No OS autostart or device trust settings were installed.

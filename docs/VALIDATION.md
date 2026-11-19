@@ -124,3 +124,9 @@ On b5a7dee the owner reported four tabs refreshing saved text without reload/Syn
 ### Owner-reported controlled resume-only result — 2026-11-18
 
 A fresh controlled setup required "Resume-only check 1" saved with This device selected and local Save confirmation. The owner corrected an initial misreading: iPad had not changed while paused, consistent with read-only server checks finding no marker. Then instructed to select Your computer in Tab 2 and observe without another Save/reload/Sync now, owner confirmed the iPad showed the same test text. This independently establishes owner-reported resume-only delivery for the new scenario. It does not explain the earlier uncontrolled delay; no implementation fix or test rerun was needed.
+
+### Database backup/recovery — 2026-11-19
+
+Six backup tests passed for live WAL/concurrent snapshots, consistency/private permissions, source-session preservation and backup-session clearing, new-directory-only restore/epoch rotation, tombstones/retry identity, retention/failure handling, invalid snapshot refusal and scheduler/lock coordination. All 16 Python tests passed together; scheduler tests were rerun after tightening wake/check cadence. Shared-tab browser regressions passed against command-line services creating their startup snapshots. Frontend code did not change and its tests/builds were not rerun; lint/whitespace checks passed.
+
+A non-destructive drill on the retained staging data verified 25 accepted operations and one current record. New restore directory had a different epoch and no sessions; the live database's epoch/operation/session counts were unchanged. After enabling automatic scheduling on both retained services, HTTP and CA-verified HTTPS returned 200 and the live epoch still matched the snapshot. Generated snapshots and drill evidence remain private/ignored. This is same-disk recovery, not an off-device backup or automated production cutover.

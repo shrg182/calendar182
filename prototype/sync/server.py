@@ -17,6 +17,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 from prepare_local_https import configuration_profile
+from backups import BackupRunner
 
 CLIENT = Path(__file__).with_name('client')
 
@@ -109,6 +110,15 @@ class Store:
             rows = db.execute('SELECT * FROM changes WHERE account=? AND date=? ORDER BY revision DESC LIMIT 100',
                               (account, date)).fetchall()
         return [self.record(row) for row in rows]
+
+
+class SyncServer(ThreadingHTTPServer):
+    backup_runner = None
+
+    def server_close(self):
+        if self.backup_runner:
+            self.backup_runner.close()
+        super().server_close()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -253,7 +263,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send(503, {'error': 'Storage unavailable; retry with the same operation ID'})
 
 
-def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile=None, keyfile=None, ca_cert=None):
+def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile=None, keyfile=None, ca_cert=None, backup_interval=None, backup_keep=168):
+    if (backup_interval is not None and backup_interval < 0) or backup_keep < 1:
+        raise ValueError('Invalid backup interval or retention')
     if bool(certfile) != bool(keyfile):
         raise ValueError('Both certfile and keyfile are required for HTTPS')
     ca_certificate = None
@@ -272,7 +284,7 @@ def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile
         fd = os.open(credentials_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, 'w') as stream:
             json.dump({name: secrets.token_urlsafe(32) for name in ('account-a', 'account-b')}, stream)
-    server = ThreadingHTTPServer((host, port), Handler)
+    server = SyncServer((host, port), Handler)
     server.scheme = 'https' if context else 'http'
     server.session_cookie = 'calendar_sync_test_https' if context else 'calendar_sync_test'
     server.ca_certificate = ca_certificate
@@ -283,6 +295,9 @@ def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile
     server.allowed_hosts = {'127.0.0.1', 'localhost', *allowed_hosts}
     server.calendar_dist = Path(calendar_dist).resolve() if calendar_dist else None
     server.daemon_threads = True
+    if backup_interval:
+        server.backup_runner = BackupRunner(data / 'sync.sqlite3', data / 'backups', backup_interval, backup_keep)
+        server.backup_runner.start()
     return server
 
 
@@ -296,10 +311,15 @@ if __name__ == '__main__':
     parser.add_argument('--certfile', help='Local HTTPS server certificate (no automatic trust installation)')
     parser.add_argument('--keyfile', help='Private key for --certfile')
     parser.add_argument('--ca-cert', help='Public PEM CA certificate to offer at /calendar/local-ca.cer')
+    parser.add_argument('--backup-interval', type=int, default=3600, help='Automatic snapshot interval in seconds; 0 disables')
+    parser.add_argument('--backup-keep', type=int, default=168, help='Number of verified snapshots retained')
     args = parser.parse_args()
-    server = make_server(args.host, args.port, args.data_dir, args.allow_host, args.calendar_dist, args.certfile, args.keyfile, args.ca_cert)
+    if args.backup_interval < 0 or args.backup_keep < 1:
+        parser.error('Backup interval must be nonnegative and retention at least 1')
+    server = make_server(args.host, args.port, args.data_dir, args.allow_host, args.calendar_dist, args.certfile, args.keyfile, args.ca_cert, args.backup_interval, args.backup_keep)
     print(f'Test-note prototype listening on {args.host}:{server.server_port}', flush=True)
     print(f'Test credentials file: {Path(args.data_dir).resolve() / "test-credentials.json"}', flush=True)
+    print(f'Automatic snapshot interval: {args.backup_interval}s; retained snapshots: {args.backup_keep}' if args.backup_interval else 'Automatic snapshots disabled', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
