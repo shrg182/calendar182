@@ -9,7 +9,7 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
-from server import Store, make_server
+from server import Store, make_server, LoginLimiter
 from prepare_local_https import prepare
 
 
@@ -77,6 +77,30 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(self.store.changes('a', 0, 100)['changes'], [])
 
 
+class LoginLimiterTests(unittest.TestCase):
+    def test_window_peer_isolation_and_bounded_capacity(self):
+        now = [0.0]
+        limiter = LoginLimiter(limit=2, window=60, capacity=2, clock=lambda: now[0])
+        self.assertEqual(limiter.attempt('a'), 0)
+        self.assertEqual(limiter.attempt('a'), 0)
+        self.assertEqual(limiter.attempt('a'), 60)
+        self.assertEqual(limiter.attempt('b'), 0)
+        self.assertEqual(limiter.attempt('c'), 60)
+        self.assertEqual(len(limiter.entries), 2)
+        now[0] = 59.5
+        self.assertEqual(limiter.attempt('a'), 1)
+        now[0] = 60
+        self.assertEqual(limiter.attempt('c'), 0)
+        self.assertEqual(limiter.attempt('a'), 0)
+
+    def test_concurrent_attempts_cannot_exceed_limit(self):
+        limiter = LoginLimiter(clock=lambda: 0)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
+            results = list(pool.map(lambda _: limiter.attempt('same-peer'), range(30)))
+        self.assertEqual(results.count(0), 10)
+        self.assertEqual(results.count(60), 20)
+
+
 class HTTPTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -101,6 +125,30 @@ class HTTPTests(unittest.TestCase):
 
     def login(self, account):
         return self.request('/api/login', {'account': account, 'token': self.server.credentials[account]})
+
+    def test_login_throttle_recovers_without_breaking_existing_session(self):
+        now = [0.0]
+        self.server.login_limiter = LoginLimiter(limit=3, clock=lambda: now[0])
+        self.login('account-a').close()
+        for account in ('account-a', 'unknown-account'):
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                self.request('/api/login', {'account': account, 'token': 'wrong'})
+            self.assertEqual(error.exception.code, 401)
+            error.exception.close()
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.login('account-a')
+        self.assertEqual(error.exception.code, 429)
+        self.assertEqual(error.exception.headers['Retry-After'], '60')
+        error.exception.close()
+        with self.request('/api/session') as response:
+            self.assertEqual(json.load(response)['account'], 'account-a')
+        with self.request('/api/operations', {'epoch': self.server.store.epoch,
+                                             'operation': operation(900)}) as response:
+            self.assertEqual(response.status, 200)
+        with self.server.store.connect() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0], 1)
+        now[0] = 60
+        self.login('account-a').close()
 
     def test_backup_health_requires_auth_and_excludes_private_paths(self):
         with self.assertRaises(urllib.error.HTTPError) as error:

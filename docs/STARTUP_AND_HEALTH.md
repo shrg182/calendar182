@@ -10,7 +10,7 @@ Installed on 2026-11-19 for the signed-in owner. Two per-user LaunchAgents run t
 4. Check Service startup says **Automatic at Mac sign-in**, Automatic backups says **Running**, and both snapshot/copy timestamps appear without an error.
 5. Use **Refresh backup status** to check again. Destination verification means the local selected-folder copy passed checks; it does not confirm a new iCloud upload.
 
-An actual sign-out/reboot test remains pending. At a convenient time, save drafts, restart the Mac, sign back in, then open the same address from iPad without starting Terminal services. Do not reboot until ready to interrupt other work.
+Post-reboot acceptance completed on 2026-11-19: the owner reported restarting the iMac and successful computer/iPad access. A subsequent saved-note check passed in both directions. No additional reboot is needed for this acceptance check.
 
 ## Maintenance
 
@@ -26,4 +26,4 @@ The manager's `uninstall` command stops/removes only these Calendar jobs and pre
 
 ## Evidence and limits
 
-Both installed jobs ran with authenticated healthy backup reports and verified destination-copy timestamps. Fresh-snapshot comparison preserved live service identity and note/history counts. Stopping each managed process produced a new running PID automatically. Actual sign-in/reboot acceptance and the owner's Settings-panel check remain pending. Main/public deployment and iPad certificate trust remain unchanged.
+Both installed jobs ran with authenticated healthy backup reports and verified destination-copy timestamps. Fresh-snapshot comparison preserved live service identity and note/history counts. Stopping each managed process produced a new running PID automatically. Subsequent post-reboot acceptance passed by owner report plus direct computer UI inspection. Settings showed automatic startup, hourly backups and a verified destination-copy timestamp. Both LaunchAgents remained loaded at follow-up. No new independent iCloud database restore was tested. Main/public deployment and iPad certificate trust remain unchanged.

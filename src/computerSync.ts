@@ -12,7 +12,7 @@ export async function computerApi(path:string,body?:unknown,account?:string):Pro
     headers:{...(body===undefined?{}:{'Content-Type':'application/json'}),...(account?{'X-Calendar-Account':account}:{})},
     body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(10000),
   })
-  if(!response.ok)throw new ComputerApiError(response.status,response.status===401?(path==='login'?'Incorrect test credentials. Try again.':'Sign-in expired. Reconnect below; local changes and drafts are retained.'):response.status===409?'Account or service changed. Local changes are retained; export a backup before investigating.':`Computer sync unavailable (${response.status}). Local changes are retained.`)
+  if(!response.ok)throw new ComputerApiError(response.status,response.status===401?(path==='login'?'Incorrect test credentials. Try again.':'Sign-in expired. Reconnect below; local changes and drafts are retained.'):response.status===429?'Too many sign-in attempts. Wait one minute before trying again; local notes and drafts are retained.':response.status===409?'Account or service changed. Local changes are retained; export a backup before investigating.':`Computer sync unavailable (${response.status}). Local changes are retained.`)
   return response.json()
 }
 export function parseSession(value:unknown):ComputerSession{

@@ -10,6 +10,9 @@ test('legacy imports keep existing by default and preserve overwritten text',asy
  assert.equal(await importNotes(parseBackup(legacy()),true),1)
  const backup=await exportBackup()
  assert.equal(backup.notes[0].text,'Imported')
+ assert.deepEqual(backup.provenance,{version:1,storage:'local',account:null,serviceEpoch:null,cursor:null})
+ const {provenance: _provenance,...oldBackup}=backup
+ assert.deepEqual(parseBackup(oldBackup),parseBackup(backup))
  assert.ok(backup.history.some(note=>note.text==='Local'))
  assert.equal(backup.outbox.length,2)
  const snapshot=parseBackup(backup)

@@ -13,6 +13,8 @@ import secrets
 import sqlite3
 import ssl
 import time
+import math
+import threading
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
@@ -112,6 +114,27 @@ class Store:
         return [self.record(row) for row in rows]
 
 
+class LoginLimiter:
+    """Bounded per-peer attempt windows; no credentials or account names retained."""
+    def __init__(self, limit=10, window=60, capacity=1024, clock=time.monotonic):
+        self.limit, self.window, self.capacity = limit, window, capacity
+        self.clock = clock
+        self.entries = {}
+        self.lock = threading.Lock()
+
+    def attempt(self, peer):
+        with self.lock:
+            now = self.clock()
+            self.entries = {key: value for key, value in self.entries.items() if value[0] > now}
+            expiry, count = self.entries.get(peer, (now + self.window, 0))
+            if count >= self.limit:
+                return max(1, math.ceil(expiry - now))
+            if peer not in self.entries and len(self.entries) >= self.capacity:
+                return max(1, math.ceil(min(value[0] for value in self.entries.values()) - now))
+            self.entries[peer] = (expiry, count + 1)
+            return 0
+
+
 class SyncServer(ThreadingHTTPServer):
     backup_runner = None
 
@@ -127,7 +150,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_):
         pass  # Never log credentials, cookies or note text.
 
-    def send(self, status, data, cookie=None, content_type='application/json; charset=utf-8'):
+    def send(self, status, data, cookie=None, content_type='application/json; charset=utf-8', retry_after=None):
         raw = data if isinstance(data, bytes) else json.dumps(data, ensure_ascii=False, separators=(',', ':')).encode()
         self.send_response(status)
         self.send_header('Content-Type', content_type)
@@ -135,6 +158,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        if retry_after is not None:
+            self.send_header('Retry-After', str(retry_after))
         if cookie:
             self.send_header('Set-Cookie', cookie)
         self.end_headers()
@@ -240,6 +265,10 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Invalid object')
             path = urlsplit(self.path).path
             if path == '/api/login':
+                retry = self.server.login_limiter.attempt(self.client_address[0])
+                if retry:
+                    self.send(429, {'error': f'Too many sign-in attempts. Try again in {retry} seconds.'}, retry_after=retry)
+                    return
                 account, token = body.get('account', ''), body.get('token', '')
                 expected = self.server.credentials.get(account) if isinstance(account, str) else None
                 if not expected or not isinstance(token, str) or not hmac.compare_digest(expected, token):
@@ -292,6 +321,7 @@ def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile
         with os.fdopen(fd, 'w') as stream:
             json.dump({name: secrets.token_urlsafe(32) for name in ('account-a', 'account-b')}, stream)
     server = SyncServer((host, port), Handler)
+    server.login_limiter = LoginLimiter()
     server.scheme = 'https' if context else 'http'
     server.session_cookie = 'calendar_sync_test_https' if context else 'calendar_sync_test'
     server.ca_certificate = ca_certificate

@@ -12,7 +12,7 @@ Starting `prototype/sync/server.py` now enables private local SQLite snapshots b
 - Options: `--backup-interval 3600 --backup-keep 168`. `--backup-interval 0` disables automatic creation.
 - HTTP and optional HTTPS processes sharing the same data directory use a process lock and recent-snapshot check to avoid duplicate scheduled snapshots.
 
-The service must be running and the computer awake. No macOS startup service or independent OS scheduler was installed. Backups on the same disk help with accidental corruption/restores; they do not protect against losing that computer or disk. An independently chosen disk/backup destination remains future work. No cloud provider or paid service was enabled.
+The service must be running and the computer awake. Mac sign-in startup is now installed and physically checked; see STARTUP_AND_HEALTH.md. Same-disk snapshots do not protect against losing that disk. The owner-selected iCloud Drive destination is enabled; see BACKUP_COPIES.md for verified-copy and independent-device verification limits. No paid service was enabled.
 
 ## Snapshot guarantees
 
@@ -20,7 +20,7 @@ The code uses SQLite's online backup API, including accepted writes still in WAL
 
 A snapshot is created in an owner-only temporary file, verified, flushed and atomically renamed before retention pruning. Only generated, strictly named snapshots are pruned; unrelated files, source files and previous verified snapshots are not deleted on copy failure. Directories are mode 0700 and snapshots 0600. This is access restriction, not encryption: snapshots contain readable note data. They remain ignored by Git and are never served by the HTTP asset handler.
 
-A failed automatic attempt keeps older snapshots, prints a generic local error without note/token contents and retries later. It does not turn a note save into a failed save. Backup failure monitoring is currently service-console output; there is no web dashboard or remote alert.
+A failed automatic attempt keeps older snapshots, prints a generic local error without note/token contents and retries later. It does not turn a note save into a failed save. Settings → Computer service & backups now reports snapshot and destination-copy health. There is no remote failure alert.
 
 ## Manual snapshot
 
@@ -44,7 +44,7 @@ The command refuses any existing destination, including the live data directory.
 
 Identity rotation is intentional: acknowledged writes newer than the snapshot may be absent. Existing clients must not silently continue from their old cursor or replay under the old service identity. Their drafts/outboxes remain local, and sync refuses the mismatch. Export saved browser data (including pending operations) from every affected device before planning reconciliation; save/copy unsaved drafts separately. Do not clear browser data or outboxes merely to bypass the error.
 
-Reconciliation and production cutover are not automated. Review client exports and accepted history in an isolated recovery workspace before choosing a merge/import policy and moving a recovered service into use. Do not assume every client's partially divergent archive can be imported blindly. This feature restores the server snapshot; it does not promise recovery of writes never captured in that snapshot or browser-only drafts.
+A read-only comparison tool is now available; see [recovery preview](RECOVERY_PREVIEW.md). Reconciliation and production cutover are not automated. Review client exports and accepted history in an isolated recovery workspace before choosing a merge/import policy and moving a recovered service into use. Do not assume every client's partially divergent archive can be imported blindly. This feature restores the server snapshot; it does not promise recovery of writes never captured in that snapshot or browser-only drafts.
 
 ## Verification — 2026-11-19
 

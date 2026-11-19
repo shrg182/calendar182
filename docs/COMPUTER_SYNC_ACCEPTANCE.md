@@ -100,3 +100,11 @@ The guided recovery sequence on implementation 224d8fc passed by owner report: a
 ## Offline reopening/HTTPS follow-up — prepared, not physically accepted
 
 Offline shell/update code is now tested on secure loopback. The earlier HTTP LAN iPad sequence does not establish offline reload support. Local HTTPS endpoint on port 8792 and a public Calendar182 certificate-only profile are prepared; device trust has not been changed. Await explicit user preference before guiding iPad root-certificate trust. See OFFLINE_LOADING.md for exact URLs, fingerprint, setup/removal instructions and remaining checks. HTTPS browser storage is separate from the old HTTP origin.
+
+## Post-reboot saved-note acceptance — 2026-11-19
+
+Owner reported the iMac had restarted and account-a worked on both computer and iPad. Direct Chrome inspection identified the actual “Computer sync test · account-a” as Calendar at HTTP port 8791; earlier conversation references to Reader Notes, books and reading-position sync were mistaken and provide no Calendar evidence.
+
+The November 19 daily note was empty before the test. Saved the synthetic line “iMac sync check — 2026-11-19” through Calendar's Save note control, then Sync now; the UI reported “Saved notes synced.” Owner followed the iPad instructions and reported success. Subsequent direct iMac inspection showed that line plus “iPad sync check,” with the synced status. This establishes owner-reported forward delivery and directly observed return delivery after the reported reboot. Test note retained; no existing note was overwritten.
+
+Settings was directly observed to report Automatic at Mac sign-in, running hourly backups and a verified selected-folder destination copy. Follow-up manager status reported both HTTP and HTTPS jobs loaded. This does not establish physical iPad HTTPS/offline-reload acceptance, independent database restore, production authentication or cloud-provider migration. Main/public deployment and device trust remain unchanged.

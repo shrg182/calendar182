@@ -2,10 +2,12 @@ import 'fake-indexeddb/auto'
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {configureComputerStorage,saveNote,readNotes,exportBackup,syncSnapshot,acknowledgeOperation,applyChanges,readComputerSyncEnabled,writeComputerSyncEnabled} from '../src/notes.ts'
-import {parseChangePage,parseSession,verifyReconnectedSession} from '../src/computerSync.ts'
+import {computerApi,ComputerApiError,parseChangePage,parseSession,verifyReconnectedSession} from '../src/computerSync.ts'
 
 test('staging isolates accounts, retains newer pending edits, applies tombstones and binds service identity',async()=>{
   configureComputerStorage('account-a')
+  const unbound=await exportBackup()
+  assert.deepEqual(unbound.provenance,{version:1,storage:'computer',account:'account-a',serviceEpoch:null,cursor:null})
   await syncSnapshot('epoch-one')
   assert.equal(await readComputerSyncEnabled(),true)
   const first=await saveNote('2026-11-17','First queued note')
@@ -24,6 +26,9 @@ test('staging isolates accounts, retains newer pending edits, applies tombstones
   assert.equal((await readNotes())[0]?.text,newer.text)
   assert.ok((await exportBackup()).history.some(note=>note.operationId===remote.id))
   assert.equal((await syncSnapshot('epoch-one')).cursor,1)
+  const exported=await exportBackup()
+  assert.deepEqual(exported.provenance,{version:1,storage:'computer',account:'account-a',serviceEpoch:'epoch-one',cursor:1})
+  assert.equal('token' in exported.provenance,false)
   await assert.rejects(syncSnapshot('epoch-two'),/identity changed/)
   assert.throws(()=>configureComputerStorage('account-b'),/Reload/)
   await acknowledgeOperation((await syncSnapshot('epoch-one')).pending[0]!)
@@ -58,4 +63,18 @@ test('reconnection must retain both account and service identity',()=>{
   assert.deepEqual(verifyReconnectedSession({...previous},previous),previous)
   assert.throws(()=>verifyReconnectedSession({account:'account-b',epoch:previous.epoch},previous),/same account/)
   assert.throws(()=>verifyReconnectedSession({account:previous.account,epoch:'replacement-service'},previous),/identity changed/)
+})
+
+
+test('throttled sign-in gives actionable guidance without retrying',async(t)=>{
+  let requests=0
+  t.mock.method(globalThis,'fetch',async()=>{requests++;return new Response('{}',{status:429,headers:{'Retry-After':'60'}})})
+  await assert.rejects(computerApi('login',{account:'account-a',token:'synthetic'}),(error:unknown)=>{
+    assert.ok(error instanceof ComputerApiError)
+    assert.equal(error.status,429)
+    assert.match(error.message,/Wait one minute/)
+    assert.match(error.message,/drafts are retained/)
+    return true
+  })
+  assert.equal(requests,1)
 })

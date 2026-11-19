@@ -61,12 +61,22 @@ export async function saveNote(date:string,text:string,deleted=false):Promise<No
     tx.onabort=()=>reject(tx.error||new Error('Could not save. Your draft is still available.'))
   })
 }
+export interface BackupProvenance {
+  version:1; storage:'local'|'computer'; account:string|null; serviceEpoch:string|null; cursor:number|null
+}
 export async function exportBackup(){
   const db=await open()
-  return new Promise<{app:string;version:number;exportedAt:string;notes:Note[];history:Note[];outbox:Note[]}>((resolve,reject)=>{
-    const tx=db.transaction(['notes','history','outbox'],'readonly')
+  return new Promise<{app:string;version:number;exportedAt:string;notes:Note[];history:Note[];outbox:Note[];provenance:BackupProvenance}>((resolve,reject)=>{
+    const tx=db.transaction(staging?['notes','history','outbox','meta']:['notes','history','outbox'],'readonly')
     const notes=tx.objectStore('notes').getAll(),history=tx.objectStore('history').getAll(),outbox=tx.objectStore('outbox').getAll()
-    tx.oncomplete=()=>resolve({app:'calendar182',version:1,exportedAt:new Date().toISOString(),notes:notes.result,history:history.result,outbox:outbox.result})
+    const sync=staging?tx.objectStore('meta').get('sync'):null
+    tx.oncomplete=()=>{
+      const meta=sync?.result as SyncMeta|undefined
+      const provenance:BackupProvenance={version:1,storage:staging?'computer':'local',
+        account:staging?databaseName.slice('calendar182.computer-staging.v1:'.length):null,
+        serviceEpoch:meta?.epoch??null,cursor:meta?.cursor??null}
+      resolve({app:'calendar182',version:1,exportedAt:new Date().toISOString(),notes:notes.result,history:history.result,outbox:outbox.result,provenance})
+    }
     tx.onabort=()=>reject(tx.error||new Error('Could not export backup.'))
   })
 }
