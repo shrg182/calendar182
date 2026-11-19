@@ -67,3 +67,24 @@ Six plan tests plus seven comparison tests pass with synthetic data. Cases cover
 safe defaults, selected deletion confirmation, absent-record rejection, malformed
 choices, account mismatch, stale history/service identity, and byte-for-byte
 preservation of inputs. No live notes, credentials or services were used.
+
+## Isolated materialization rehearsal — 2026-11-19
+
+`test_recovery_drill.py` uses generated synthetic data only. It validates explicit
+choices, restores into a new temporary directory and reconstructs selected
+current values with fresh operation IDs. It tests keep-server, use-device,
+device-only creation and explicitly confirmed deletion. Prior server history and
+original retry acknowledgements remain intact; another account is unchanged.
+The complete device export, including unselected versions and pending edits, is
+retained as a separate candidate archive rather than silently replayed or cleared.
+
+The candidate has a new service identity, no sessions, eight accepted operations
+and five account/date records. SQLite validation passed. Source database,
+snapshot and export hashes were unchanged; restore refused the occupied
+candidate directory. The temporary directory is cleaned up after the test.
+All 14 recovery tests passed together. No real notes or running services were used.
+
+This fixture-only rehearsal does not add an apply API or make plans executable.
+Client-only history remains in the archive, not imported into server history;
+real multi-device reconciliation, client rebinding and production cutover remain
+unimplemented. The next design must resolve these before any real materializer.
