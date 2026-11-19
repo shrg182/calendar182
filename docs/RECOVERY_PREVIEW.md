@@ -17,8 +17,8 @@ python3 -B prototype/sync/recovery_preview.py \
 Use a snapshot made by the backup tool or the snapshot.sqlite3 from a separately
 verified destination bundle. Verify a copied bundle with the existing verify-copy
 command before using its database. Preserve the original exports and separately
-copy unsaved drafts. Run once per device against the same snapshot; this first
-version does not combine several device exports. Reports contain dates,
+copy unsaved drafts. For several devices, use the [multi-device comparison](MULTI_DEVICE_RECOVERY.md)
+to review every export against one consistent snapshot. Reports contain dates,
 operation IDs and text fingerprints, so keep them private and out of Git.
 Full note text, credentials and session contents are not printed.
 
