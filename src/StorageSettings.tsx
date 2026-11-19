@@ -1,6 +1,7 @@
 import {storageOptions} from './storage'
 import {useContext} from 'react'
 import {ComputerStorageContext} from './computerStorageContext'
+import {BackupStatus} from './BackupStatus'
 
 export function StorageSettings(){
   const control=useContext(ComputerStorageContext)
@@ -18,5 +19,6 @@ export function StorageSettings(){
     </fieldset>
     <p id="storage-availability">Cloud options will become selectable when their connections and safe data transfer are ready. {computer?'This selection applies to all Calendar tabs for this account in this browser. This device pauses new sync requests; a request already sent may finish. Your computer resumes pending saved edits. Both choices retain local notes, history, drafts and existing computer copies. Your usual Calendar notes remain separate.':'The computer sync experiment is separate from this Calendar.'}</p>
     <p>You can export and import backups below to move saved notes between browsers now.</p>
+    {control&&<BackupStatus account={control.account}/>}
   </section>
 }

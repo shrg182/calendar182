@@ -3,6 +3,7 @@ import argparse
 from contextlib import contextmanager, closing
 import datetime
 import fcntl
+import json
 import os
 from pathlib import Path
 import secrets
@@ -147,6 +148,7 @@ class BackupRunner:
         self.failed = False
         self.copy_root = copy_root
         self.copy_failed = False
+        self.copy_in_progress = False
         self.thread = threading.Thread(target=self.run, name='calendar-backup', daemon=True)
 
     def run_once(self):
@@ -163,11 +165,52 @@ class BackupRunner:
                 from backup_copies import export_copy
                 available = snapshots(self.directory)
                 if available:
-                    export_copy(available[-1], self.copy_root)
+                    self.copy_in_progress = True
+                    copied = export_copy(available[-1], self.copy_root)
+                    if copied:
+                        self.record_copy_success()
                 self.copy_failed = False
             except (OSError, ValueError, sqlite3.Error):
                 self.copy_failed = True
                 print('Calendar backup copy unavailable; local snapshots retained. Check the selected destination.', flush=True)
+            finally:
+                self.copy_in_progress = False
+
+    def record_copy_success(self):
+        directory = Path(self.source).parent
+        fd, name = tempfile.mkstemp(prefix='.backup-health-', dir=directory)
+        temporary = Path(name)
+        try:
+            with os.fdopen(fd, 'w') as stream:
+                json.dump({'copyRoot': str(Path(self.copy_root).absolute()), 'lastCopyVerifiedAt': time.time()}, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            durable_publish(temporary, directory / 'backup-health.json')
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def health(self):
+        result = {'enabled': True, 'running': self.thread.is_alive(), 'intervalSeconds': self.interval,
+                  'snapshotCount': 0, 'lastSnapshotAt': None, 'snapshotFailed': self.failed,
+                  'copyConfigured': bool(self.copy_root), 'copyFailed': self.copy_failed,
+                  'copyInProgress': self.copy_in_progress, 'lastCopyVerifiedAt': None}
+        try:
+            available = snapshots(self.directory)
+            result['snapshotCount'] = len(available)
+            if available:
+                result['lastSnapshotAt'] = available[-1].stat().st_mtime
+        except OSError:
+            result['snapshotFailed'] = True
+        if self.copy_root:
+            try:
+                saved = json.loads((Path(self.source).parent / 'backup-health.json').read_text())
+                if saved.get('copyRoot') == str(Path(self.copy_root).absolute()):
+                    stamp = saved.get('lastCopyVerifiedAt')
+                    if isinstance(stamp, (int, float)) and not isinstance(stamp, bool) and 0 < stamp < 1e12:
+                        result['lastCopyVerifiedAt'] = stamp
+            except (OSError, ValueError, AttributeError):
+                pass
+        return result
 
     def run(self):
         while not self.stop.is_set():

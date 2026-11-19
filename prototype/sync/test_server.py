@@ -102,6 +102,17 @@ class HTTPTests(unittest.TestCase):
     def login(self, account):
         return self.request('/api/login', {'account': account, 'token': self.server.credentials[account]})
 
+    def test_backup_health_requires_auth_and_excludes_private_paths(self):
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.request('/api/backup-status')
+        self.assertEqual(error.exception.code, 401)
+        error.exception.close()
+        self.login('account-a').close()
+        report = json.load(self.request('/api/backup-status'))
+        self.assertFalse(report['enabled'])
+        self.assertNotIn(self.temp.name, json.dumps(report))
+        self.assertNotIn('test-credentials', json.dumps(report))
+
     def test_calendar_assets_and_account_binding(self):
         root = Path(self.temp.name) / 'calendar-dist'
         (root / 'assets').mkdir(parents=True)

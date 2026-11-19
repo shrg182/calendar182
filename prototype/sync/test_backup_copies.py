@@ -79,6 +79,23 @@ class CopyTests(unittest.TestCase):
         bundle = next((missing / 'Calendar182Backups').glob('calendar182-*'))
         self.assertEqual(verify_copy(bundle)['operations'], 1)
 
+    def test_health_is_persistent_redacted_and_scoped_to_destination(self):
+        runner = BackupRunner(self.source, self.backups, copy_root=self.destination)
+        runner.run_once()
+        report = runner.health()
+        self.assertEqual(report['snapshotCount'], 1)
+        self.assertIsNotNone(report['lastCopyVerifiedAt'])
+        self.assertFalse(report['copyFailed'])
+        self.assertNotIn(str(self.destination), json.dumps(report))
+        self.assertNotIn('synthetic copy test', json.dumps(report))
+        reopened = BackupRunner(self.source, self.backups, copy_root=self.destination)
+        self.assertEqual(reopened.health()['lastCopyVerifiedAt'], report['lastCopyVerifiedAt'])
+        missing = BackupRunner(self.source, self.backups, copy_root=self.root / 'offline-destination')
+        with patch('builtins.print'):
+            missing.run_once()
+        self.assertTrue(missing.health()['copyFailed'])
+        self.assertIsNone(missing.health()['lastCopyVerifiedAt'])
+
 
 if __name__ == '__main__':
     unittest.main()

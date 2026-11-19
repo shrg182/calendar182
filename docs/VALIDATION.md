@@ -142,3 +142,9 @@ Exported fresh retained-data snapshot `calendar182-20261119T161642588269Z-e25adc
 ### iPad iCloud manifest access — 2026-11-19
 
 Owner confirmed the folder in iPad Files and supplied the selected manifest: operations 25/records 1, expected format and SHA-256 5469c09d5fe92314c8932b55db26a55bf2c6ef2c1a8f7bf7f24fe91e779c6541. Re-verifying the Mac iCloud-folder bundle/database produced that same checksum and counts. Record independent-device manifest access; the database itself was not independently downloaded/hashed/restored on iPad. No code changes or code test reruns.
+
+### Mac startup and backup health — 2026-11-19
+
+Lint, typecheck, all 18 application tests, both builds and all 27 Python tests passed. New parser/service/startup-plan tests cover sanitized authenticated health, persisted destination-scoped verification and startup configuration safety. The status browser suite passed healthy timestamps, destination failure/recovery, last-known status on fetch failure, draft preservation and 320/1280px layout. Shared-tab suites passed with normal and fallback browser APIs.
+
+Installed both prepared per-user LaunchAgents. Authenticated HTTP/HTTPS reports showed managed startup, running hourly backups, local snapshot and verified destination timestamps, and no failures. A fresh snapshot matched live database identity and note/history counts. Controlled termination of each job produced a new PID automatically. This verifies process recovery, not a real reboot/sign-in. Owner panel acceptance remains pending. No trust/power settings or public deployment changed.

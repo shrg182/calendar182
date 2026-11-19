@@ -208,6 +208,13 @@ class Handler(BaseHTTPRequestHandler):
             query = parse_qs(path.query)
             if path.path == '/api/session':
                 self.send(200, {'account': account, 'epoch': self.server.store.epoch})
+            elif path.path == '/api/backup-status':
+                runner = self.server.backup_runner
+                status = runner.health() if runner else {
+                    'enabled': False, 'running': False, 'intervalSeconds': None,
+                    'snapshotCount': 0, 'lastSnapshotAt': None, 'snapshotFailed': False,
+                    'copyConfigured': False, 'copyFailed': False, 'copyInProgress': False, 'lastCopyVerifiedAt': None}
+                self.send(200, {**status, 'managedStartup': self.server.managed_startup})
             elif path.path == '/api/changes':
                 cursor, limit = int(query.get('cursor', ['0'])[0]), int(query.get('limit', ['100'])[0])
                 if cursor < 0 or not 1 <= limit <= 100:
@@ -295,6 +302,7 @@ def make_server(host, port, data, allowed_hosts=(), calendar_dist=None, certfile
     server.allowed_hosts = {'127.0.0.1', 'localhost', *allowed_hosts}
     server.calendar_dist = Path(calendar_dist).resolve() if calendar_dist else None
     server.daemon_threads = True
+    server.managed_startup = os.environ.get('CALENDAR182_LAUNCH_AGENT') == '1'
     if backup_interval:
         server.backup_runner = BackupRunner(data / 'sync.sqlite3', data / 'backups', backup_interval, backup_keep, backup_copy_root)
         server.backup_runner.start()
