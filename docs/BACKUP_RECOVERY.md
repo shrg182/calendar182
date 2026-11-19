@@ -57,3 +57,5 @@ Both retained staging services were restarted with default hourly/168 retention 
 ## Optional destination copies
 
 The new `copy` / `verify-copy` commands and `--backup-copy-root` support verified bundles in an explicitly selected existing external-drive or cloud-folder root. This feature is disabled until a destination is chosen. It does not silently select the discovered OneDrive folder. Missing roots are not created and local backups continue if copying is unavailable. Bundle restore validates the checksum before the existing new-directory/epoch-rotation workflow. See [destination-copy workflow and limits](BACKUP_COPIES.md).
+
+Selected destination update (2026-11-19): iCloud Drive/Calendar182Backups is now enabled on the retained services. A 25-operation copied bundle passed checksum and a separate local restore drill, and macOS reported both files uploaded. Independent-device download/restore is not yet verified. See BACKUP_COPIES.md for restart flags and evidence scope.

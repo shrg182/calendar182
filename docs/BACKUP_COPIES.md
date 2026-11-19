@@ -1,6 +1,6 @@
 # Copies to an owner-selected backup destination
 
-Status: workflow implemented and tested with temporary folders; no real destination is selected or enabled yet. No project snapshot has been copied to OneDrive, an external drive or another external folder.
+Status (2026-11-19): owner indicated existing iCloud Drive as the preferred destination. Dedicated iCloud folder copying is enabled; a retained-data bundle passed checksum and local restore checks. macOS reports both bundle files uploaded. Independent-device download/restore remains unverified.
 
 Inspection found `/Users/ruixingshi/OneDrive` and no mounted external drive under `/Volumes` (only the internal system volume and Time Machine's managed directory). Neither a Time Machine internal directory nor a detected cloud folder is selected automatically. Owner choice is required before exporting readable note data.
 
@@ -33,4 +33,24 @@ For periodic copying, add `--backup-copy-root EXISTING_SELECTED_ROOT` to the exi
 
 Five new tests passed: verified/idempotent copy and restore, missing-root/live-file refusal, corrupted-manifest rejection without overwrite/restore, failed-copy preservation and cleanup, and local scheduler survival/catch-up after destination return. All 21 Python service/backup/copy tests and lint/whitespace checks passed. Tests use synthetic notes and temporary folders; these are not actual external-drive/cloud-upload observations.
 
-Next: receive the owner's choice, verify the concrete destination, copy one retained-data snapshot there with required filesystem permission, verify/checksum it, and restore from that copy into a new private drill directory. For a cloud folder, separately confirm remote sync status before claiming off-computer recovery.
+The preparation above preceded destination selection. The selected iCloud setup and precise verification scope follow.
+
+## Selected iCloud Drive destination — 2026-11-19
+
+Destination: existing iCloud Drive → Calendar182Backups. Root on this Mac is `~/Library/Mobile Documents/com~apple~CloudDocs`. The owner identified iCloud Drive as their usual storage, and the concrete folder copy was approved through filesystem permission. No OneDrive or external-drive copy was made, and no Calendar sync backend was replaced.
+
+A fresh local snapshot of 25 accepted operations/one current record was exported as bundle `calendar182-20261119T161642588269Z-e25adc78`. The source/target checksum and database integrity/counts matched. Restoring from that iCloud-folder bundle into a separate ignored local drill directory verified 25 operations/one record, new epoch and zero sessions; live identity/operation/session counts remained unchanged. This was a local read of the iCloud folder, not an independent device download.
+
+Targeted Foundation metadata reads for `snapshot.sqlite3` and `manifest.json` returned isUbiquitousItem=true, uploaded=true, uploading=false, no upload error and no unresolved conflicts. This is macOS-reported upload completion, not an independent cloud checksum/restore. [Apple upload-status API](https://developer.apple.com/documentation/foundation/urlresourcekey/ubiquitousitemisuploadedkey). No unrelated iCloud documents were inspected.
+
+Both retained staging services were restarted with the existing data/certificate options plus the selected `--backup-copy-root`, and HTTP/CA-verified HTTPS returned 200. They continue hourly local snapshots and retry the latest destination copy on scheduler checks. Destination bundles currently have no automatic pruning; local retention stays at 168. No device trust settings or main/public deployment changed.
+
+For a manual HTTP service restart, include the destination explicitly:
+
+```sh
+python3 prototype/sync/server.py --host 0.0.0.0 --allow-host 192.168.68.58 --port 8791 --data-dir prototype/sync/.data/calendar-stage --calendar-dist prototype/sync/calendar-dist --ca-cert prototype/sync/.data/local-https/ca.pem --backup-copy-root "$HOME/Library/Mobile Documents/com~apple~CloudDocs"
+```
+
+Do not start a duplicate listener on the same port. The ignored `backup-copy-config.json` records the selected root and verification evidence for handoff; it is not automatically loaded as service configuration. Manual restarts must retain the flag. No OS autostart job is installed.
+
+Next optional independent check: on iPad Files → iCloud Drive → Calendar182Backups, find the bundle and open its manifest. A visible folder alone proves neither a complete database download nor a restore on that device; record those observations precisely.

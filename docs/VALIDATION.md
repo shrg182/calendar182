@@ -134,3 +134,7 @@ A non-destructive drill on the retained staging data verified 25 accepted operat
 ### Selected-destination backup copies — 2026-11-19
 
 All 21 Python tests passed. Five new tests verify byte-checksummed/idempotent bundles and restore, missing root/live-source refusal, corrupt-copy overwrite/restore refusal, failed-copy cleanup with source/previous copy preservation, and scheduler retry when the destination returns without breaking local snapshots. Lint/whitespace checks passed. All copy destinations and notes were synthetic/temp data. No actual external drive or cloud folder was chosen, configured or written, and no off-computer recoverability is claimed.
+
+### Selected iCloud Drive copy — 2026-11-19
+
+Exported fresh retained-data snapshot `calendar182-20261119T161642588269Z-e25adc78` to the explicitly selected/permission-approved iCloud Drive Calendar182Backups folder. Checksum and SQLite checks passed. Restoring from the copied bundle into a fresh ignored drill directory verified 25 accepted operations/one current record, epoch rotation and empty sessions; live identity/operation/session counts were unchanged. Targeted macOS Foundation metadata reported both files ubiquitous/uploaded, not uploading, with no upload errors/conflicts. This is OS-reported upload plus local restoration; independent-device cloud download/checksum/restore remains unverified. Both retained services restarted with --backup-copy-root and returned 200. Only configuration/documentation changed; no code tests rerun or device trust changes.
