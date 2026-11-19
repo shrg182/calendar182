@@ -419,3 +419,17 @@ Owner indicated they often use iCloud Drive. Used its existing root `~/Library/M
 - Ignored selection/evidence: `.data/calendar-stage/backup-copy-config.json`, including uploaded confirmation source and independent_device_restore_verified=false. This record is not auto-loaded by the server; manual restart commands must include --backup-copy-root. No OS autostart installed. Destination copies are not automatically pruned; local snapshot retention remains 168.
 
 Docs updated: BACKUP_COPIES, BACKUP_RECOVERY, VALIDATION and HANDOFF. No implementation source changed, so no test rerun; local copy/restore and actual service availability are the relevant checks. Preserve these setup records on sync-prototype. Next optional check: user opens iPad Files → iCloud Drive → Calendar182Backups and checks bundle/manifest availability. Do not overstate remote restore readiness or revisit deferred certificate setup. Main/public Calendar remains unchanged; computer-hosted sync still handles live synchronization independently of iCloud backups.
+
+## iPad iCloud folder observation — 2026-11-19
+
+Setup docs were committed/pushed as 4529d54; working tree was clean before this observation. Owner confirmed Calendar182Backups is visible in iPad Files/iCloud Drive ("See it"). Record folder visibility, not independent database download/restore. Next ask to open the bundle ending e25adc78 and manifest.json, checking operations 25 / records 1. Ignored backup-copy-config.json now includes ipad_folder_seen=true; independent_device_restore_verified remains false.
+
+## iPad iCloud manifest read verified — 2026-11-19
+
+Owner supplied manifest JSON from the selected iPad bundle: expected format, operations 25, records 1, SHA-256 5469c09d5fe92314c8932b55db26a55bf2c6ef2c1a8f7bf7f24fe91e779c6541. Mac re-verification of the copied database matched exactly and counts validated. This establishes independent-device manifest readability, not an independent database download/restore. Local evidence now records ipad_manifest_read=true and matching checksum; independent_device_restore_verified remains false.
+
+Folder + manifest observations are uncommitted docs after 4529d54. Next preserve verification records; the iCloud copy setup, checksum/local restore drill, OS upload status and iPad manifest access have all been checked. Do not require SQLite tools on iPad or claim an iPad restore. Main and deferred device trust remain unchanged.
+
+## iCloud verification repository checkpoint — 2026-11-19
+
+Owner authorized preserving the iPad folder/manifest verification. This documentation-only update records the checksum/count match and accurately separates local restore, OS-reported upload and iPad manifest access. No snapshots, configuration, keys, credentials or note contents are staged. Earlier uncommitted references describe the observation checkpoint. Main/public deployment remains unchanged.

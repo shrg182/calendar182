@@ -138,3 +138,7 @@ All 21 Python tests passed. Five new tests verify byte-checksummed/idempotent bu
 ### Selected iCloud Drive copy — 2026-11-19
 
 Exported fresh retained-data snapshot `calendar182-20261119T161642588269Z-e25adc78` to the explicitly selected/permission-approved iCloud Drive Calendar182Backups folder. Checksum and SQLite checks passed. Restoring from the copied bundle into a fresh ignored drill directory verified 25 accepted operations/one current record, epoch rotation and empty sessions; live identity/operation/session counts were unchanged. Targeted macOS Foundation metadata reported both files ubiquitous/uploaded, not uploading, with no upload errors/conflicts. This is OS-reported upload plus local restoration; independent-device cloud download/checksum/restore remains unverified. Both retained services restarted with --backup-copy-root and returned 200. Only configuration/documentation changed; no code tests rerun or device trust changes.
+
+### iPad iCloud manifest access — 2026-11-19
+
+Owner confirmed the folder in iPad Files and supplied the selected manifest: operations 25/records 1, expected format and SHA-256 5469c09d5fe92314c8932b55db26a55bf2c6ef2c1a8f7bf7f24fe91e779c6541. Re-verifying the Mac iCloud-folder bundle/database produced that same checksum and counts. Record independent-device manifest access; the database itself was not independently downloaded/hashed/restored on iPad. No code changes or code test reruns.

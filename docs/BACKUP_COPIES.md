@@ -54,3 +54,11 @@ python3 prototype/sync/server.py --host 0.0.0.0 --allow-host 192.168.68.58 --por
 Do not start a duplicate listener on the same port. The ignored `backup-copy-config.json` records the selected root and verification evidence for handoff; it is not automatically loaded as service configuration. Manual restarts must retain the flag. No OS autostart job is installed.
 
 Next optional independent check: on iPad Files → iCloud Drive → Calendar182Backups, find the bundle and open its manifest. A visible folder alone proves neither a complete database download nor a restore on that device; record those observations precisely.
+
+## iPad folder visibility — 2026-11-19
+
+Asked whether Calendar182Backups was visible in iPad Files under iCloud Drive, owner replied "See it." Record as owner-reported independent-device folder visibility only. Opening the copied manifest/database, checksum verification after remote download and an independent restore remain unconfirmed. Next open the verified bundle ending e25adc78 and manifest.json; expected operations=25 and records=1.
+
+## iPad manifest read confirmed — 2026-11-19
+
+Owner opened the selected bundle manifest on iPad and supplied format calendar182-sync-snapshot-v1, operations 25, records 1, SHA-256 `5469c09d5fe92314c8932b55db26a55bf2c6ef2c1a8f7bf7f24fe91e779c6541`. Recomputed the Mac iCloud-folder database checksum and verified its manifest/database: exact match and counts confirmed. Record as owner-reported independent-device manifest access, with its declared checksum matching the verified local bundle. It does not establish an independent iPad database download/checksum or restore. The earlier local restore drill and OS-reported upload evidence remain separate.
