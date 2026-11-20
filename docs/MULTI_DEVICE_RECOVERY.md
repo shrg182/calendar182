@@ -53,8 +53,8 @@ wrong-account and label/input rejection, legacy provenance, changed identity,
 account filtering and byte-for-byte source preservation. The combined recovery
 suite has 20 passing tests.
 
-This adds comparison, not multi-device choice application. The earlier
-recovery_plan.py remains single-device only; several individually valid plans
-must not be applied sequentially as if they formed one reconciled result.
-Next design a single combined set of choices and per-operation reconciliation
-that retains all device histories before any isolated materialization or cutover.
+A [combined choice validator](MULTI_DEVICE_CHOICES.md) is now available through
+recovery_multi_plan.py. It remains non-executable. The earlier recovery_plan.py
+is single-device only; do not apply separate plans sequentially. Per-operation
+reconciliation and preservation of all histories still require explicit design
+before generalized isolated materialization or live cutover.

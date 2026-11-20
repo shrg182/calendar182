@@ -1,26 +1,118 @@
 # Calendar182 handoff
 
-Updated: 2026-11-19 (America/Detroit). User last reported 2% quota remaining. This document replaces the earlier chronological notes; do not restart discovery or recreate the repository.
+Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below; older sections retain historical evidence and may describe superseded intermediate states.
 
 ## Current stopping point — read first
 
-- Checkpoint commits 674d0d3 and 59a4322 were pushed to origin/sync-prototype. Added recovery_multi.py: read-only comparison of 2–8 labeled device exports against one private frozen snapshot; no live data collection. Reports compare current variants/absences/tombstones, preserve each device's operation concerns and flag cross-device ID/content collisions including history. Fingerprints cover all input comparisons and are argument-order independent. Six new synthetic tests; combined 20 recovery tests pass. See docs/MULTI_DEVICE_RECOVERY.md. No merge, device rebind, live service restart, staging asset replacement, main change or public deployment. Next design combined reviewed choices and operation reconciliation; do not apply separate single-device plans sequentially.
+Recovery development is paused by owner decision on November 20. The owner chose to preserve the tested work and use Calendar normally rather than expand recovery tooling. The active project is
+`/Users/ruixingshi/Python/calendar182`, branch `sync-prototype`, not `reader_app`
+or `reader-notes`. This handoff is `calendar/HANDOFF.md` within Calendar182.
 
-- Checkpoint committed as 674d0d3 on sync-prototype: acceptance records, sign-in throttling, export provenance and recovery comparison/choices. Then added a synthetic-only materialization regression drill; all 14 recovery tests passed. It creates a new temporary restored database, reconstructs selected content with fresh IDs, preserves server history/retry acknowledgements, keeps full device exports as an archive, checks rotated identity/empty sessions/account isolation and unchanged source bytes, and rejects overwriting the candidate. No general apply tool or live cutover was added. See RECOVERY_CHOICES.md. No push, public deployment, live staging build replacement or service restart in this checkpoint. Next design multi-device reconciliation and treatment of archived client-only history before a real materializer.
+### Repository checkpoint
 
-- Reviewed checkpoint: all 44 Python tests, 19 app tests, TypeScript, lint and diff checks passed. Staging build passed in /tmp/calendar-checkpoint-build, retaining the known >500 KB bundle warning; live staging assets were not replaced. Accumulated acceptance, throttling, export provenance and read-only recovery preview/choice work is being preserved in a dedicated sync-prototype commit. Older “uncommitted” entries below describe intermediate states. Next run a synthetic-only isolated materialization drill; no live apply or public deployment.
+- This checkpoint contains the November 20 combined multi-device choice and
+  per-operation preservation review, 12 combined-plan tests, documentation and
+  the consolidated handoff. It is being committed and pushed on sync-prototype
+  under the subject `Checkpoint recovery review and pause further tooling`.
+- Previously pushed implementation: **9f4d890** (multi-device comparison),
+  **674d0d3** (authentication/export/recovery safeguards) and **59a4322**
+  (synthetic reconstruction drill).
+- Only the five intended implementation/documentation files were changed at
+  this checkpoint. No unrelated work was found or discarded.
+- No merge to main, public deployment, staging asset replacement or service
+  restart is part of this checkpoint. GitHub-hosted CI is not claimed here;
+  recorded passing results are local.
 
-- Recovery-choice increment: recovery_plan.py generates defer-by-default date choices and validates keep_server/use_device/defer with explicit tombstone confirmation. Fingerprints bind account, service identity and all compared current/history/pending content; stale decisions are rejected. Absent records cannot stand for deletion. Plans retain unresolved operation concerns, always executable=false; no live merge/rebind/apply exists. Six new plan tests plus seven preview tests passed, with input preservation and stale-history/service checks. See docs/RECOVERY_CHOICES.md. No live data or services changed; all recent work remains local/uncommitted. Next checkpoint should preserve/review the accumulated work before designing isolated materialization and multi-device operation reconciliation. Do not treat complete date choices as safe cutover approval.
+### Completed and verified
 
-- Export provenance increment: new version-1 JSON backups now carry optional versioned storage/account/serviceEpoch/cursor metadata, captured in the same readonly IndexedDB transaction as notes/history/outbox. Local-only and never-bound computer stores use explicit nulls. Old exports still import unchanged; import does not adopt metadata as authentication or change sync identity. Recovery preview rejects conflicting account labels, validates metadata, flags rotated service identity and preserves unknown legacy provenance. Labels are self-reported, never cryptographic verification. 19 app tests, seven recovery tests, TypeScript, lint and diff checks passed. No staging rebuild or live restart; users will see the new export fields only after the staged client is rebuilt and activated. Existing work remains uncommitted. Next design reviewed recovery choices; no live merge or public deployment.
+- Actual iMac restart and account-a access on computer/iPad were reported by the
+  owner. Calendar's November 19 note was saved on iMac; owner confirmed iPad
+  delivery and added a return marker. Direct iMac inspection showed both markers
+  and “Saved notes synced.” Do not repeat basic sync/reboot checks.
+- Managed HTTP/HTTPS services remained loaded with PIDs 785/798 at the last check.
+  Settings showed automatic startup, hourly snapshots and a verified copy time.
+- Test sign-in throttling, optional account/service/cursor export metadata,
+  backward-compatible older exports, single-device comparison and explicit
+  keep-server/use-device/defer review choices are implemented in source.
+- Recovery choices require explicit tombstone confirmation and reject stale
+  comparison fingerprints. Plans are non-executable; ambiguous operation history
+  is retained for review rather than silently replayed or discarded.
+- Synthetic reconstruction drill creates a new temporary restored database,
+  checks selected contents/history/deletions/account isolation, preserves source
+  bytes and original retry acknowledgements, and archives the complete device
+  export. It is a test fixture, not a general recovery/apply tool.
+- Multi-device comparison accepts 2–8 labeled exports against one frozen
+  snapshot. It reports current-content differences, absences, deletion markers,
+  per-device pending/history concerns and cross-device ID/content collisions.
+  No real exports were collected or compared during implementation.
 
-- Read-only recovery preview implemented: prototype/sync/recovery_preview.py compares one SQLite snapshot and one Calendar182 v1 device export for an explicitly chosen test account. It reports pending/accepted/missing operations, ID collisions, current-content differences and tombstones without note text or mutations. Five synthetic tests pass, including exact input-byte preservation and account filtering. See docs/RECOVERY_PREVIEW.md. Old exports lack account/service provenance; reports explicitly leave account binding unverified and never claim missing non-pending history was necessarily acknowledged. No live data comparison, merge, service restart or deployment occurred. Next add backward-compatible account/service provenance to future exports, then design reviewed reconciliation choices. Existing authentication and acceptance work remains uncommitted alongside this increment.
+- Combined multi-device choices now default to defer, select an exact device or
+  server candidate, require explicit deletion confirmation, and bind the entire
+  input comparison. Changes to history/device membership/labels invalidate old
+  choices. Per-device operation concerns and ID collisions remain unresolved in
+  the non-executable plan. No real exports were collected.
 
-- Authentication/recovery review increment: added bounded, concurrent-safe per-peer sign-in throttling (10 attempts/60 seconds, 429/Retry-After), client retry guidance and regression tests. Existing authenticated sync is unaffected. Recovery guide now reflects installed startup and Settings health reporting. See docs/AUTHENTICATION_AND_RECOVERY.md for remaining production identity, transport and reconciliation work. Live services were not restarted; no credentials/data/trust/main changes. Next: preserve this checkpoint, then implement an isolated recovery comparison preview before any real cutover. Do not provision cloud services or repeat basic device tests.
+- Choices format v2 adds device+operation-ID preservation review: retain pending
+  edits, acknowledgement evidence or unclassified history, or quarantine ID
+  conflicts. Conflicts include accepted copies implicated by another device.
+  Missing/duplicate/unknown/wrong-category/discard/replay choices are rejected.
+  Completion only records intentions: preservationPerformed=false and
+  executable=false; all unresolved concerns remain. Regenerate old v1 templates.
 
-- 2026-11-19 post-reboot acceptance is complete: owner reported the iMac restarted and account-a remained accessible on computer/iPad. The Calendar UI showed Automatic at Mac sign-in, running hourly backups, and a verified destination-copy timestamp. In the isolated Calendar on HTTP port 8791, saved a synthetic November 19 note on iMac; owner confirmed the iPad result and added a return marker. Direct iMac UI inspection showed both markers and “Saved notes synced.” Both managed services remain loaded (HTTP PID 785, HTTPS PID 798 at the follow-up check). These results concern Calendar, not Reader Notes or the separate reader_app service. Do not repeat basic sync/reboot acceptance. No public deployment, main merge, power settings or certificate trust changes. Next development planning should address remaining production authentication and recovery/client-reconciliation requirements; cloud provisioning and iPad certificate setup remain deferred.
+### Latest validation
 
-- 2026-11-19: Mac automatic startup and Settings → Computer service & backups are implemented. Both Calendar LaunchAgents are installed/running, with hourly local snapshots and the existing iCloud destination. Both authenticated health reports were healthy; each service automatically restarted with a new PID after controlled termination. Fresh-snapshot comparison preserved database identity and note/history counts. See `docs/STARTUP_AND_HEALTH.md`. Next: guide owner through saving drafts, reloading the HTTP Calendar once, and checking the new Settings panel. Actual Mac reboot/sign-in acceptance was subsequently completed as recorded above; do not reboot automatically. No power/trust changes.
+- **51 Python tests passed**, covering service, backups, startup and recovery.
+- **32 recovery tests passed on November 20**, including 12 combined-plan/
+  operation-review tests and CLI roundtrips. The 51-test full Python result above is from the
+  preceding checkpoint; unrelated suites were not rerun for this isolated tool.
+- **19 app tests**, TypeScript, lint and diff checks passed at the preceding
+  frontend checkpoint. Subsequent work changed only Python recovery tools/tests
+  and documentation; those frontend checks were not needlessly repeated.
+- Staging build passed in `/tmp/calendar-checkpoint-build` with the known
+  >500 KB bundle warning. Temporary build files may not survive future sessions.
+- Live staging assets were not replaced and live services were not restarted.
+  The running client does not yet have new export metadata/retry guidance;
+  running service processes do not yet have the new sign-in limiter. A future
+  controlled activation must preserve drafts, data and service identity.
+
+### Next session — normal use, not more recovery development
+
+1. Let the owner use Calendar normally on iMac and iPad. Basic saved-note sync,
+   restart/sign-in startup and automatic backups have already been verified.
+2. Address concrete usability problems or failures reported during normal use.
+   Do not repeat completed tests or propose another recovery increment by default.
+3. Advanced recovery work (verified archive bundles, generalized reconstruction,
+   client reconciliation and live cutover) is optional deferred work, not a
+   prerequisite for continuing the current test-account note workflow. Resume
+   it only at the owner's request.
+4. Keep the running Calendar, main/public app, credentials and device trust
+   unchanged. Source safeguards not yet activated remain distinguished from
+   running behavior; do not claim production authentication or a general live
+   restore exists. iPad certificate setup stays deferred.
+
+### Key files and boundaries
+
+- `prototype/sync/recovery_preview.py`: single-device read-only comparison.
+- `prototype/sync/recovery_plan.py`: single-device choice template/validation.
+- `prototype/sync/recovery_multi.py`: multi-device read-only comparison.
+- `prototype/sync/recovery_multi_plan.py`: combined choice template/validation.
+- `docs/MULTI_DEVICE_CHOICES.md`: combined-review usage and limits.
+- `prototype/sync/test_recovery_drill.py`: synthetic reconstruction fixture.
+- `docs/RECOVERY_PREVIEW.md`, `RECOVERY_CHOICES.md`, `MULTI_DEVICE_RECOVERY.md`,
+  `AUTHENTICATION_AND_RECOVERY.md`: behavior, commands and remaining limits.
+- Account/service provenance is self-reported metadata, not authentication.
+  Older exports remain unknown; changed service identity is never auto-rebound.
+- Do not modify main/public Calendar, Health Calendar, live notes, credentials,
+  power settings or device certificate trust as part of recovery review.
+- iPad certificate setup remains deferred. External cloud provisioning is not
+  the default next task. Current iCloud copies are backups, not the live sync
+  backend; independent database download/restore remains unverified.
+
+## Earlier implementation context — historical
+
+The following sections preserve earlier evidence. Their “pending,” “uncommitted”
+and next-step statements are superseded by the current checkpoint above where
+applicable.
 
 - The owner decided external cloud storage and a hosted backend are not required at this stage if the current computer-hosted sync meets their needs. Cloudflare/D1 remains an isolated feasibility experiment; do not resume cloud provisioning or identity-provider selection as the default next task.
 - The owner subsequently requested that users choose their storage provider and be able to switch later. This is an application requirement, not selection of a particular provider. Keep the free-services-only constraint.
