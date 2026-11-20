@@ -11,7 +11,18 @@ export const items=[
 ] as const
 export type ItemId=typeof items[number][0]
 export type Selections=Record<ItemId,{enabled:boolean;targets:string[]}>
-export interface ShenshaSettings {version:1;zone:string;selections:Selections}
+export const birthScopes=['year','month','day','hour'] as const
+export type BirthPillars=Record<typeof birthScopes[number],string>
+export interface ShenshaSettings {version:1;zone:string;selections:Selections;birth:BirthPillars}
+export function classifyTarget(target:string,birth:BirthPillars):'ming'|'yun'|'uncertain'|'unclassified'{
+ const known=birthScopes.map(scope=>birth[scope]).filter(Boolean)
+ if(known.some(pillar=>target.length===2?pillar===target:stems.includes(target)?pillar[0]===target:pillar[1]===target))return 'ming'
+ return known.length===4?'yun':known.length?'uncertain':'unclassified'
+}
+export const originLabels={ming:'命 · stronger',yun:'运 · weaker',uncertain:'Uncertain · birth pillars incomplete',unclassified:'Unclassified · enter birth pillars'}
+export function encounteredTargets(pillar:string,id:ItemId,settings:ShenshaSettings){
+ return settings.selections[id].targets.filter(target=>[pillar[0],pillar[1],pillar].includes(target)).map(target=>({target,origin:classifyTarget(target,settings.birth)}))
+}
 export function targetsFor(id:ItemId):string[]{
  if(id==='shie')return ['甲辰','乙巳','丙申','丁亥','戊戌','己丑','庚辰','辛巳','壬申','癸亥']
  if(id==='yinyang')return ['丙子','丁丑','戊寅','辛卯','壬辰','癸巳','丙午','丁未','戊申','辛酉','壬戌','癸亥']
@@ -20,13 +31,18 @@ export function targetsFor(id:ItemId):string[]{
  if(id==='zaisha'||id.startsWith('custom'))return [...stems,...branches,...pairs]
  return [...branches]
 }
-export function emptySettings():ShenshaSettings{return {version:1,zone:'',selections:Object.fromEntries(items.map(([id])=>[id,{enabled:false,targets:[]}])) as unknown as Selections}}
+export function emptySettings():ShenshaSettings{return {version:1,zone:'',birth:{year:'',month:'',day:'',hour:''},selections:Object.fromEntries(items.map(([id])=>[id,{enabled:false,targets:[]}])) as unknown as Selections}}
 export function validateSettings(raw:unknown):ShenshaSettings{
  if(!raw||typeof raw!=='object')throw Error('Invalid Shensha settings.')
  const value=raw as ShenshaSettings
  if(value.version!==1||typeof value.zone!=='string'||value.zone.length>100||!value.selections||typeof value.selections!=='object')throw Error('Invalid Shensha settings.')
  if(value.zone)new Intl.DateTimeFormat('en',{timeZone:value.zone}).format(0)
  const result=emptySettings();result.zone=value.zone
+ // Missing birth fields are valid legacy settings; preserve existing selections.
+ if(value.birth!==undefined){
+  if(!value.birth||typeof value.birth!=='object')throw Error('Invalid birth pillars.')
+  for(const scope of birthScopes){const pillar=value.birth[scope];if(typeof pillar!=='string'||(pillar!==''&&!pairs.includes(pillar)))throw Error('Choose valid birth pillars.');result.birth[scope]=pillar}
+ }
  for(const [id] of items){const entry=value.selections[id]
   if(!entry||typeof entry.enabled!=='boolean'||!Array.isArray(entry.targets)||entry.targets.length>82||entry.targets.some(t=>typeof t!=='string'||!targetsFor(id).includes(t))||(entry.enabled&&!entry.targets.length))throw Error(`Choose valid targets for ${id}.`)
   result.selections[id]={enabled:entry.enabled,targets:[...new Set(entry.targets)]}

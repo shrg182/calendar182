@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {contextForDate,dayPillar,emptySettings,evaluate,items,matches,targetsFor,validateSettings,termsForYear,noon,upcomingMatches} from '../src/shensha.ts'
+import {contextForDate,dayPillar,emptySettings,evaluate,items,matches,targetsFor,validateSettings,termsForYear,noon,upcomingMatches,classifyTarget,encounteredTargets} from '../src/shensha.ts'
 const date=(key:string)=>{const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d,12)}
 test('reference pillar example and civil-midnight split Zi hours',()=>{
  const c=contextForDate(date('2026-10-22'),'America/Detroit')
@@ -65,4 +65,17 @@ test('upcoming dates include endpoints, retain inactive matches and agree with d
  assert.throws(()=>upcomingMatches('2026-11-02','2026-11-01',s))
  assert.throws(()=>upcomingMatches('2026-01-01','2026-04-04',s))
  assert.doesNotThrow(()=>upcomingMatches('2026-01-01','2026-04-03',s))
+})
+
+test('birth targets classify independently, with exact pair matching and incomplete-data uncertainty',()=>{
+ const s=emptySettings();assert.equal(classifyTarget('申',s.birth),'unclassified')
+ s.birth={year:'甲申',month:'乙丑',day:'丙寅',hour:''}
+ assert.equal(classifyTarget('申',s.birth),'ming');assert.equal(classifyTarget('子',s.birth),'uncertain')
+ assert.equal(classifyTarget('甲',s.birth),'ming');assert.equal(classifyTarget('甲寅',s.birth),'uncertain')
+ s.birth.hour='丁卯';assert.equal(classifyTarget('子',s.birth),'yun');assert.equal(classifyTarget('甲寅',s.birth),'yun')
+ s.selections.custom1={enabled:true,targets:['甲','子','甲子']}
+ assert.deepEqual(encounteredTargets('甲子','custom1',s).map(t=>t.origin),['ming','yun','yun'])
+ const {birth,...legacy}=s;assert.deepEqual(validateSettings(legacy).birth,emptySettings().birth)
+ assert.deepEqual(validateSettings(legacy).selections,s.selections)
+ assert.throws(()=>validateSettings({...s,birth:{...birth,hour:'甲丑'}}))
 })

@@ -4,6 +4,20 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Birth pillars and 命 / 运 classifications
+
+Owner approved trying target-level classification using all four manually entered
+birth pillars. Settings now accept valid sexagenary pairs or unknown for each
+pillar. A target present in any known pillar is 命 (stronger); absent with all
+four known is 运 (weaker); absent with incomplete pillars is uncertain; no birth
+data is unclassified. Stems/branches match their components, pairs match exact
+pillars. Each encountered target is labeled independently. No multiplier, repeat
+count, hour eligibility or 空亡 change. Existing stored settings migrate with
+blank birth pillars without losing targets. Birth settings are local per browser/
+account, unsynced and outside note backups. 27 unit tests, typecheck/lint and
+isolated browser checks passed, including persistence and unknown-hour behavior.
+Published to both calendars; search remains hidden and four views remain available.
+
 ### Year, Month, Week and Day views
 
 Added a view switch above the calendar, responsive twelve-month year display,
