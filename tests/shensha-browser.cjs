@@ -15,6 +15,15 @@ const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  await day();assert.equal(await page.locator('[data-pillar-scope=day]').getAttribute('data-pillar'),'己巳');assert.equal(await page.locator('[data-pillar-scope=year] [data-shensha=tiande]').count(),1);assert.equal(await page.locator('[data-pillar-scope=hour] [data-shensha=custom1]').count(),1);
  await page.getByLabel('Daily note',{exact:true}).fill('Unsaved note retained through Shensha settings');await page.getByRole('button',{name:'Edit Shensha selections'}).click();
  const kw=picker('空亡');await kw.locator('summary').click();await kw.getByRole('checkbox',{name:'Enable 空亡',exact:true}).check();await kw.getByRole('checkbox',{name:'巳',exact:true}).check();await page.getByRole('button',{name:'Save Shensha selections'}).click();await day();assert.match(await page.locator('.shensha-void').innerText(),/inactive/);assert.equal(await page.getByLabel('Daily note',{exact:true}).inputValue(),'Unsaved note retained through Shensha settings');
+ const viewButtons=page.getByRole('group',{name:'Calendar view'});
+ for(const view of ['Year','Month','Week','Day']){
+  await viewButtons.getByRole('button',{name:view,exact:true}).click();await page.getByRole('region',{name:view+' calendar',exact:true}).waitFor();
+  assert.equal(await page.getByLabel('Daily note',{exact:true}).inputValue(),'Unsaved note retained through Shensha settings');
+  if(view==='Year')assert.equal(await page.locator('.year-month').count(),12);
+  for(const width of [320,390,1280]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
+ }
+ await page.getByRole('button',{name:'Next day',exact:true}).click();assert.equal(await page.getByLabel('Daily note',{exact:true}).inputValue(),'');await page.getByRole('button',{name:'Previous day',exact:true}).click();assert.equal(await page.getByLabel('Daily note',{exact:true}).inputValue(),'Unsaved note retained through Shensha settings');
+ await viewButtons.getByRole('button',{name:'Month',exact:true}).click();
  assert.equal(await page.getByRole('region',{name:'Upcoming Shensha matches'}).count(),0);
  await page.getByRole('button',{name:'Save note',exact:true}).click();await page.getByText('Saved on this device.',{exact:true}).waitFor();await page.reload();await page.getByRole('button',{name:'Settings',exact:true}).click();await day();assert.match(await page.locator('.shensha-void').innerText(),/inactive/);
  for(const width of [320,390,1280]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}

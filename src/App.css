@@ -28,3 +28,5 @@ main{padding-top:20px}.settings-title{font-size:28px}.date small{white-space:nor
 .shensha-date-list > li { border-top:1px solid #ccc; padding:1rem 0; overflow-wrap:anywhere; }
 .shensha-date-list ul { padding-left:1.3rem; margin:.6rem 0; }
 .shensha-date-list summary { cursor:pointer; padding:.65rem 0; }
+
+.view-switch{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}.view-switch button{flex:1;min-height:44px}.view-switch button[aria-pressed=true]{background:#315547;color:white}.year-months{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}.year-month{min-width:0}.year-month h3{margin:0 0 14px}.year-month h3 button{width:100%;min-height:44px}.year-month .date{min-height:44px;font-size:14px;padding:5px;align-items:center}.calendar-panel .toolbar{flex-wrap:wrap}.week-dates .date{min-height:110px}@media(max-width:560px){.year-months{grid-template-columns:minmax(0,1fr)}.calendar-panel{padding-left:2px;padding-right:2px}.view-switch{padding:0 6px}.week-dates .date{font-size:14px}}

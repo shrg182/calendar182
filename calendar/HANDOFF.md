@@ -4,6 +4,16 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Year, Month, Week and Day views
+
+Added a view switch above the calendar, responsive twelve-month year display,
+Sunday-first week display and selected-day view with existing details/notes.
+Navigation moves by the active period, clamps at 1901–2100, and handles leap
+and short months. Clicking dates retains note drafts. Upcoming Shensha search
+remains hidden. 26 tests, typecheck, lint and isolated Chrome checks passed,
+including all four views at 320/390/1280 pixels and draft preservation.
+Published to public and computer-hosted calendars without service restarts.
+
 ### Upcoming search hidden at owner request
 
 Owner requested hiding Find Shensha dates. Removed the upcoming-search panel
