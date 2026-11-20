@@ -4,6 +4,26 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Current: horizontal Week/Day navigation
+
+Owner requested horizontal navigation in place of vertical lists. Week now uses
+seven consecutive dates centered on the chosen date when opened from Month,
+clamped at 1901–2100. Swipe/trackpad-horizontal movement shifts one day at a time;
+it does not enforce Sunday/Saturday boundaries. Tablet/desktop has seven tall
+columns with Shensha and note previews; phones (<=600px) have seven date buttons
+and a spacious selected-day detail/editor panel. Day renders one full-width date,
+with full Shensha and notes, horizontal previous/next movement and ordinary
+vertical page scrolling. Today and arrow buttons remain available. Keyboard
+left/right is available on the swipe region. Input/editor gestures do not navigate.
+Drafts survive date/view changes. Manual strengths and hidden future features
+remain as previously agreed. Removed obsolete virtual-list component.
+
+28 unit tests, typecheck/lint, isolated Chrome and WebKit checks passed, covering
+both swipe directions, rolling date selection, phone/tablet responsiveness,
+1901/2100 limits, Today, editor and vertical-gesture protection, draft preservation,
+manual settings and storage safeguards. Phone and tablet screenshots reviewed.
+Published to both calendars without restarting the computer service.
+
 ### Current: scrollable Week/Day and manual 命 / 运
 
 Owner approved the combined proposals: vertical continuous Week/Day displays,

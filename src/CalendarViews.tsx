@@ -1,5 +1,5 @@
-import {ScrollCalendar} from './ScrollCalendar'
-import type {ScrollMemory} from './ScrollCalendar'
+import {HorizontalCalendar} from './HorizontalCalendar'
+import type {ReactNode} from 'react'
 import type {ShenshaSettings} from './shensha'
 import {dateKey,dateLabels,lunarLabel,monthDates} from './calendar'
 import type {CalendarView} from './calendarNavigation'
@@ -7,7 +7,7 @@ const full=new Intl.DateTimeFormat('en-US',{dateStyle:'full'})
 const monthTitle=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'})
 const weekdays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const min=new Date(1901,0,1,12),max=new Date(2100,11,31,12)
-export function CalendarViews({view,date,selected,today,hasNote,onView,onDate,onMove,onToday,settings,note,memory}:{settings:ShenshaSettings;note:(date:Date)=>string;memory:ScrollMemory;view:CalendarView;date:Date;selected:Date|null;today:Date;hasNote:(date:Date)=>boolean;onView:(view:CalendarView,date?:Date)=>void;onDate:(date:Date)=>void;onMove:(delta:number)=>void;onToday:()=>void}){
+export function CalendarViews({view,date,selected,today,hasNote,onView,onDate,onMove,onToday,settings,note,details}:{settings:ShenshaSettings;note:(date:Date)=>string;details:ReactNode;view:CalendarView;date:Date;selected:Date|null;today:Date;hasNote:(date:Date)=>boolean;onView:(view:CalendarView,date?:Date)=>void;onDate:(date:Date)=>void;onMove:(delta:number)=>void;onToday:()=>void}){
  const start=new Date(date.getFullYear(),date.getMonth(),date.getDate(),12);start.setDate(start.getDate()-start.getDay())
  const week=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(d.getDate()+i);return d<min||d>max?null:d})
  const heading=view==='year'?String(date.getFullYear()):view==='month'?monthTitle.format(date):view==='day'?full.format(date):`${dateKey(week.find(d=>d) as Date)} – ${dateKey(week.filter(d=>d).at(-1) as Date)}`
@@ -17,6 +17,6 @@ export function CalendarViews({view,date,selected,today,hasNote,onView,onDate,on
  return <section className="panel calendar-panel" aria-label={`${view[0].toUpperCase()+view.slice(1)} calendar`}>
  <div className="view-switch" role="group" aria-label="Calendar view">{(['year','month','week','day'] as const).map(v=><button key={v} aria-pressed={v===view} onClick={()=>onView(v)}>{v[0].toUpperCase()+v.slice(1)}</button>)}</div>
  {(view==='month'||view==='year')&&<div className="toolbar"><h2 aria-live="polite">{heading}</h2><div className="navigation"><button aria-label={`Previous ${view}`} disabled={atStart} onClick={()=>onMove(-1)}>‹</button><button onClick={onToday}>Today</button><button aria-label={`Next ${view}`} disabled={atEnd} onClick={()=>onMove(1)}>›</button></div></div>}
- {view==='year'?<div className="year-months">{Array.from({length:12},(_,m)=><section key={m} className="year-month"><h3><button onClick={()=>onView('month',new Date(date.getFullYear(),m,1,12))}>{monthTitle.format(new Date(date.getFullYear(),m,1))}</button></h3>{cells(monthDates(date.getFullYear(),m),true)}</section>)}</div>:view==='month'?cells(monthDates(date.getFullYear(),date.getMonth())):<ScrollCalendar key={view} view={view} date={date} today={today} settings={settings} note={note} onDate={onDate} memory={memory}/>}
+ {view==='year'?<div className="year-months">{Array.from({length:12},(_,m)=><section key={m} className="year-month"><h3><button onClick={()=>onView('month',new Date(date.getFullYear(),m,1,12))}>{monthTitle.format(new Date(date.getFullYear(),m,1))}</button></h3>{cells(monthDates(date.getFullYear(),m),true)}</section>)}</div>:view==='month'?cells(monthDates(date.getFullYear(),date.getMonth())):<HorizontalCalendar key={view+dateKey(date)} view={view} date={date} selected={selected} today={today} settings={settings} note={note} onDate={onDate} details={details}/>}
  </section>
 }
