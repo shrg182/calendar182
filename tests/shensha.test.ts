@@ -74,8 +74,10 @@ test('birth targets classify independently, with exact pair matching and incompl
  assert.equal(classifyTarget('甲',s.birth),'ming');assert.equal(classifyTarget('甲寅',s.birth),'uncertain')
  s.birth.hour='丁卯';assert.equal(classifyTarget('子',s.birth),'yun');assert.equal(classifyTarget('甲寅',s.birth),'yun')
  s.selections.custom1={enabled:true,targets:['甲','子','甲子']}
- assert.deepEqual(encounteredTargets('甲子','custom1',s).map(t=>t.origin),['ming','yun','yun'])
+ assert.deepEqual(encounteredTargets('甲子','custom1',s).map(t=>t.origin),['unclassified','unclassified','unclassified'])
  const {birth,...legacy}=s;assert.deepEqual(validateSettings(legacy).birth,emptySettings().birth)
  assert.deepEqual(validateSettings(legacy).selections,s.selections)
  assert.throws(()=>validateSettings({...s,birth:{...birth,hour:'甲丑'}}))
 })
+
+test('manual strength applies to every target and overrides preserved birth data',()=>{const s=emptySettings();s.birth.year='甲子';s.selections.custom1={enabled:true,targets:['甲','子'],origin:'yun'};assert.deepEqual(encounteredTargets('甲子','custom1',s).map(t=>t.origin),['yun','yun']);assert.deepEqual(validateSettings(s).birth,s.birth);assert.equal(validateSettings(s).selections.custom1.origin,'yun');assert.throws(()=>validateSettings({...s,selections:{...s.selections,custom1:{...s.selections.custom1,origin:'invalid'}}}))})

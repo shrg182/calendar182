@@ -10,7 +10,7 @@ export const items=[
  ['custom1','自定义①','custom'],['custom2','自定义②','custom'],['custom3','自定义③','custom'],
 ] as const
 export type ItemId=typeof items[number][0]
-export type Selections=Record<ItemId,{enabled:boolean;targets:string[]}>
+export type Selections=Record<ItemId,{enabled:boolean;targets:string[];origin?:'ming'|'yun'|'unclassified'}>
 export const birthScopes=['year','month','day','hour'] as const
 export type BirthPillars=Record<typeof birthScopes[number],string>
 export interface ShenshaSettings {version:1;zone:string;selections:Selections;birth:BirthPillars}
@@ -19,9 +19,9 @@ export function classifyTarget(target:string,birth:BirthPillars):'ming'|'yun'|'u
  if(known.some(pillar=>target.length===2?pillar===target:stems.includes(target)?pillar[0]===target:pillar[1]===target))return 'ming'
  return known.length===4?'yun':known.length?'uncertain':'unclassified'
 }
-export const originLabels={ming:'命 · stronger',yun:'运 · weaker',uncertain:'Uncertain · birth pillars incomplete',unclassified:'Unclassified · enter birth pillars'}
+export const originLabels={ming:'命 · stronger',yun:'运 · weaker',uncertain:'Uncertain · birth pillars incomplete',unclassified:'Not chosen'}
 export function encounteredTargets(pillar:string,id:ItemId,settings:ShenshaSettings){
- return settings.selections[id].targets.filter(target=>[pillar[0],pillar[1],pillar].includes(target)).map(target=>({target,origin:classifyTarget(target,settings.birth)}))
+ return settings.selections[id].targets.filter(target=>[pillar[0],pillar[1],pillar].includes(target)).map(target=>({target,origin:settings.selections[id].origin||'unclassified'}))
 }
 export function targetsFor(id:ItemId):string[]{
  if(id==='shie')return ['甲辰','乙巳','丙申','丁亥','戊戌','己丑','庚辰','辛巳','壬申','癸亥']
@@ -45,7 +45,8 @@ export function validateSettings(raw:unknown):ShenshaSettings{
  }
  for(const [id] of items){const entry=value.selections[id]
   if(!entry||typeof entry.enabled!=='boolean'||!Array.isArray(entry.targets)||entry.targets.length>82||entry.targets.some(t=>typeof t!=='string'||!targetsFor(id).includes(t))||(entry.enabled&&!entry.targets.length))throw Error(`Choose valid targets for ${id}.`)
-  result.selections[id]={enabled:entry.enabled,targets:[...new Set(entry.targets)]}
+  if(entry.origin!==undefined&&!['ming','yun','unclassified'].includes(entry.origin))throw Error('Choose 命 or 运, or leave not chosen.');
+  result.selections[id]={enabled:entry.enabled,targets:[...new Set(entry.targets)],...(entry.origin?{origin:entry.origin}:{})}
  }
  return result
 }

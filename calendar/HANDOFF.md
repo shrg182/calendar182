@@ -4,6 +4,31 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Current: scrollable Week/Day and manual 命 / 运
+
+Owner approved the combined proposals: vertical continuous Week/Day displays,
+manual strength per Shensha item, and hiding birth settings alongside date search.
+Week and Day use a virtualized scroll region with fixed controls, visible-period
+heading, Today/previous/next navigation, remembered positions while switching
+views/settings, and date buttons opening details with a Back to calendar list
+button. Day cards include lunar labels, Shensha summaries and short note/draft
+previews; note editors remain outside the scroll list. Limits are 1901–2100.
+
+Each Shensha item (including custom) now has Not chosen / 命 / 运. Its manual
+choice applies to all targets, ignores retained birth data, and persists locally.
+命 uses dark/bold green, red or purple; 运 uses softer colors and normal weight.
+Labels remain explicit, repeat counts remain separate, and 空亡 stays gray/inactive.
+Legacy selections and birth data are preserved; missing manual choices stay Not
+chosen. Both inactive UI components live in src/future with a README; neither is
+imported by the active app. Automatic birth classification remains only for future
+use. No notes/sync/recovery behavior changes.
+
+28 unit tests, typecheck, lint, and isolated Chrome AND WebKit checks passed:
+scrolling/virtualization, Today, limits, view-position restoration, detail return,
+manual strengths/reload, 320/390/1280 layouts, note drafts, storage conflict/failure.
+Mobile screenshots reviewed. Published to public main and computer static bundle
+without restarting services. Settings remain local per browser/account.
+
 ### Birth pillars and 命 / 运 classifications
 
 Owner approved trying target-level classification using all four manually entered

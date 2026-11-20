@@ -1,0 +1,5 @@
+import {pairs,birthScopes} from '../shensha'
+import type {useShensha} from '../useShensha'
+export function BirthPillars({model}:{model:ReturnType<typeof useShensha>}){return <> <fieldset className="birth-pillars"><legend>Birth pillars · 出生四柱</legend><p>Enter known pillars manually. A target present in any birth pillar is 命 (stronger); absent from all four is 运 (weaker). Missing pillars leave absent targets uncertain. These labels follow your matching rule; they do not change repeat counts or 空亡 exclusions.</p>
+ <div className="birth-fields">{birthScopes.map(scope=><label key={scope}>Birth {scope} pillar<select aria-label={`Birth ${scope} pillar`} value={model.draft.birth[scope]} onChange={e=>model.setDraft({...model.draft,birth:{...model.draft.birth,[scope]:e.target.value}})}><option value="">Unknown / not entered</option>{pairs.map(pair=><option key={pair} value={pair}>{pair}</option>)}</select></label>)}</div><p>Birth pillars stay in this browser/account with Shensha selections. Save below to apply them; configure each device separately.</p></fieldset>
+</>}

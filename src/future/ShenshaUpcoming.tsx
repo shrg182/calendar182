@@ -1,7 +1,7 @@
 import {useMemo,useState} from 'react'
-import {dateKey} from './calendar'
-import {items,upcomingMatches} from './shensha'
-import type {ItemId,ShenshaSettings} from './shensha'
+import {dateKey} from '../calendar'
+import {items,upcomingMatches} from '../shensha'
+import type {ItemId,ShenshaSettings} from '../shensha'
 const names=(ids:ItemId[])=>ids.map(id=>items.find(item=>item[0]===id)![1]).join(' · ')
 const clock=(n:number)=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`
 export function ShenshaUpcoming({settings,onOpen}:{settings:ShenshaSettings;onOpen:(date:Date)=>void}){
