@@ -4,6 +4,13 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Upcoming search hidden at owner request
+
+Owner requested hiding Find Shensha dates. Removed the upcoming-search panel
+from the calendar UI; retained its implementation for possible later use.
+Shensha settings and selected-day results remain available. No saved settings
+or notes were changed. This visibility change is published to both calendars.
+
 ### Upcoming matching dates (November 20)
 
 Owner confirmed the first Shensha release works on mobile devices and iMac and
