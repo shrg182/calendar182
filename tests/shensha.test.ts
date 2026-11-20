@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {contextForDate,dayPillar,emptySettings,evaluate,items,matches,targetsFor,validateSettings,termsForYear,noon} from '../src/shensha.ts'
+import {contextForDate,dayPillar,emptySettings,evaluate,items,matches,targetsFor,validateSettings,termsForYear,noon,upcomingMatches} from '../src/shensha.ts'
 const date=(key:string)=>{const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d,12)}
 test('reference pillar example and civil-midnight split Zi hours',()=>{
  const c=contextForDate(date('2026-10-22'),'America/Detroit')
@@ -51,4 +51,18 @@ test('noon solar-boundary rule and supported date edges',()=>{
   assert.ok(c.month.start<=date(key)&&date(key)<=c.month.end)
  }
  assert.throws(()=>contextForDate(date('1900-12-31')))
+})
+
+test('upcoming dates include endpoints, retain inactive matches and agree with day details across DST',()=>{
+ const s=emptySettings();s.zone='America/Detroit';s.selections.tiande={enabled:true,targets:['丙']};s.selections.kongwang={enabled:true,targets:['巳']}
+ const rows=upcomingMatches('2026-10-22','2026-11-02',s)
+ assert.equal(rows.length,12);assert.equal(rows[0].date.getDate(),22);assert.equal(rows.at(-1)!.date.getDate(),2)
+ assert.equal(rows[0].result.inactive,true)
+ for(const row of rows)assert.deepEqual(row.result,evaluate(contextForDate(row.date,s.zone),s.selections))
+ assert.equal(upcomingMatches('2024-02-28','2024-03-01',emptySettings()).length,0)
+ assert.equal(upcomingMatches('2100-12-31','2100-12-31',s).length>=0,true)
+ assert.throws(()=>upcomingMatches('2026-02-30','2026-03-01',s))
+ assert.throws(()=>upcomingMatches('2026-11-02','2026-11-01',s))
+ assert.throws(()=>upcomingMatches('2026-01-01','2026-04-04',s))
+ assert.doesNotThrow(()=>upcomingMatches('2026-01-01','2026-04-03',s))
 })

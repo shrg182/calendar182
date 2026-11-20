@@ -78,3 +78,23 @@ export function evaluate(context:ReturnType<typeof contextForDate>,selections:Se
  const hours=context.hours.map(slot=>({...slot,found:matches(slot.pillar,selections).filter(id=>counts[id]>=2)}))
  return {groups,counts,hours,inactive:counts.kongwang>0}
 }
+
+// Civil-date iteration preserves dates across daylight-saving transitions.
+export function upcomingMatches(start:string,end:string,settings:ShenshaSettings){
+ function parse(key:string){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(key))throw Error('Choose valid start and end dates.')
+  const [y,m,d]=key.split('-').map(Number),date=new Date(y,m-1,d,12)
+  if(y<1901||y>2100||date.getFullYear()!==y||date.getMonth()!==m-1||date.getDate()!==d)throw Error('Choose valid dates within 1901–2100.')
+  return date
+ }
+ const first=parse(start),last=parse(end)
+ const days=Math.round((Date.UTC(last.getFullYear(),last.getMonth(),last.getDate())-Date.UTC(first.getFullYear(),first.getMonth(),first.getDate()))/86400000)+1
+ if(days<1)throw Error('End date must be on or after start date.')
+ if(days>93)throw Error('Choose a range of 93 days or fewer.')
+ const rows=[]
+ for(const date=new Date(first);date<=last;date.setDate(date.getDate()+1)){
+  const context=contextForDate(date,settings.zone),result=evaluate(context,settings.selections)
+  if(Object.values(result.groups).some(group=>group.length))rows.push({date:new Date(date),context,result})
+ }
+ return rows
+}

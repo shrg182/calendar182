@@ -4,6 +4,19 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Upcoming matching dates (November 20)
+
+Owner confirmed the first Shensha release works on mobile devices and iMac and
+approved upcoming matching dates. Added a 1–93 day inclusive range search using
+saved settings and the existing engine, 10-result pagination, pillar explanations,
+matching hour intervals, explicit inactive 空亡 dates, and open-day navigation.
+Year/month matches intentionally appear on every applicable day. No settings sync,
+note changes, or recovery work. All 25 app tests, typecheck, lint and isolated
+Chrome checks passed (320/390/1280 widths, pagination, date navigation, invalid
+range and preservation of unsaved notes). Prior public release 16e16cf deployed
+successfully and its live assets were verified. This increment is being published
+through main and the computer static bundle, with no service restart.
+
 ### Publishing authorization and local activation (November 20)
 
 Owner explicitly requested “update and publish the calendar,” authorizing main/
