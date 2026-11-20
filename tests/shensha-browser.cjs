@@ -1,0 +1,27 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
+(async()=>{
+ const root=process.env.SHENSHA_TEST_DIST;if(!root)throw Error('Set SHENSHA_TEST_DIST to an isolated build folder');
+ const server=http.createServer((req,res)=>{const relative=decodeURIComponent(new URL(req.url,'http://test').pathname);const file=path.resolve(root,'.'+(relative==='/'?'/index.html':relative));if(!file.startsWith(path.resolve(root)+path.sep)){res.writeHead(403).end();return}try{res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file))}catch{res.writeHead(404).end()}});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
+ try{browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext({timezoneId:'America/Detroit',viewport:{width:390,height:844}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));const url=`http://127.0.0.1:${server.address().port}`;
+ await page.goto(url);await page.getByRole('button',{name:'Settings',exact:true}).click();
+ const picker=name=>page.locator('.shensha-picker').filter({has:page.locator('summary').filter({hasText:name})});
+ const td=picker('天德');await td.locator('summary').click();await td.getByRole('checkbox',{name:'Enable 天德',exact:true}).check();await td.getByRole('checkbox',{name:'丙',exact:true}).check();
+ const custom=picker('自定义①');await custom.locator('summary').click();await custom.getByRole('checkbox',{name:'Enable 自定义①',exact:true}).check();for(const target of ['丙','戊','己','庚'])await custom.getByRole('checkbox',{name:target,exact:true}).check();
+ await page.getByRole('button',{name:'Save Shensha selections',exact:true}).click();await page.getByText('Shensha selections saved on this device.',{exact:true}).waitFor();
+ async function day(){await page.getByRole('button',{name:'Back to calendar',exact:true}).click();await page.getByLabel('Find date',{exact:true}).fill('2026-10-22');await page.getByRole('button',{name:'Show date',exact:true}).click()}
+ await day();assert.equal(await page.locator('[data-pillar-scope=day]').getAttribute('data-pillar'),'己巳');assert.equal(await page.locator('[data-pillar-scope=year] [data-shensha=tiande]').count(),1);assert.equal(await page.locator('[data-pillar-scope=hour] [data-shensha=custom1]').count(),1);
+ await page.getByLabel('Daily note',{exact:true}).fill('Unsaved note retained through Shensha settings');await page.getByRole('button',{name:'Edit Shensha selections'}).click();
+ const kw=picker('空亡');await kw.locator('summary').click();await kw.getByRole('checkbox',{name:'Enable 空亡',exact:true}).check();await kw.getByRole('checkbox',{name:'巳',exact:true}).check();await page.getByRole('button',{name:'Save Shensha selections'}).click();await day();assert.match(await page.locator('.shensha-void').innerText(),/inactive/);assert.equal(await page.getByLabel('Daily note',{exact:true}).inputValue(),'Unsaved note retained through Shensha settings');
+ await page.getByRole('button',{name:'Save note',exact:true}).click();await page.getByText('Saved on this device.',{exact:true}).waitFor();await page.reload();await page.getByRole('button',{name:'Settings',exact:true}).click();await day();assert.match(await page.locator('.shensha-void').innerText(),/inactive/);
+ for(const width of [320,390,1280]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)}
+ await page.locator('.shensha-day').screenshot({path:'/tmp/calendar-shensha-desktop.png'});await page.setViewportSize({width:390,height:844});await page.locator('.shensha-day').screenshot({path:'/tmp/calendar-shensha-mobile.png'});
+ // Another tab saves while this tab has a draft: refuse to overwrite its settings.
+ await page.getByRole('button',{name:'Edit Shensha selections'}).click();await page.getByLabel('Calculation time zone',{exact:true}).fill('Asia/Shanghai');const peer=await context.newPage();await peer.goto(url);await peer.getByRole('button',{name:'Settings',exact:true}).click();await peer.getByLabel('Calculation time zone',{exact:true}).fill('Asia/Kathmandu');await peer.getByRole('button',{name:'Save Shensha selections'}).click();await page.getByRole('button',{name:'Save Shensha selections'}).click();await page.getByText('Saved selections changed in another tab. Load saved selections before editing again.',{exact:true}).waitFor();
+ // Storage failure retains current selections and draft, with an honest error.
+ await peer.getByLabel('Calculation time zone',{exact:true}).fill('Asia/Shanghai');await peer.evaluate(()=>{Storage.prototype.setItem=function(){throw Error('Synthetic storage failure')}});await peer.getByRole('button',{name:'Save Shensha selections'}).click();await peer.getByText('Synthetic storage failure',{exact:true}).waitFor();assert.equal(await peer.getByLabel('Calculation time zone',{exact:true}).inputValue(),'Asia/Shanghai');
+ assert.deepEqual(errors,[]);console.log('PASS: saved Shensha selection, pillar/hour matches, Kongwang, reload, note draft preservation, 320/390/1280 layouts, concurrent-save guard and storage failure.');
+ }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve))}
+})().catch(e=>{console.error(e);process.exit(1)});

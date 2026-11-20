@@ -1,0 +1,14 @@
+import {useEffect,useRef,useState} from 'react'
+import {storageScope} from './notes'
+import {emptySettings,validateSettings} from './shensha'
+export function useShensha(){
+ const key=`calendar182.shensha.v1:${storageScope()}`
+ const [initial]=useState(()=>{try{const raw=localStorage.getItem(key);return {raw,value:raw?validateSettings(JSON.parse(raw)):emptySettings(),error:''}}catch{return {raw:null,value:emptySettings(),error:'Saved selections could not be read. Existing storage has not been replaced.'}}})
+ const raw=useRef(initial.raw)
+ const [saved,setSaved]=useState(initial.value),[draft,setDraft]=useState(initial.value),[status,setStatus]=useState(initial.error)
+ const dirty=JSON.stringify(saved)!==JSON.stringify(draft)
+ useEffect(()=>{if(!dirty)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue=''};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[dirty])
+ function save(){try{const value=validateSettings(draft);if(localStorage.getItem(key)!==raw.current)throw Error('Saved selections changed in another tab. Load saved selections before editing again.');const next=JSON.stringify(value);localStorage.setItem(key,next);raw.current=next;setSaved(value);setDraft(value);setStatus('Shensha selections saved on this device.')}catch(error){setStatus(error instanceof Error?error.message:'Could not save selections. Your changes remain here.')}}
+ function reload(){if(dirty&&!window.confirm('Discard unsaved Shensha selections and load the saved selections?'))return;try{const next=localStorage.getItem(key);const value=next?validateSettings(JSON.parse(next)):emptySettings();raw.current=next;setSaved(value);setDraft(value);setStatus('Loaded saved Shensha selections.')}catch{setStatus('Saved selections could not be read. Your current selections are retained.')}}
+ return {saved,draft,setDraft,status,dirty,save,reload}
+}

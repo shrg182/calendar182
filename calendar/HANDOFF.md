@@ -4,6 +4,43 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Publishing authorization and local activation (November 20)
+
+Owner explicitly requested “update and publish the calendar,” authorizing main/
+GitHub Pages publication for this milestone in addition to the computer-hosted
+bundle. This supersedes earlier no-main/no-deployment notes for this release.
+Local static assets were updated without restarting HTTP/HTTPS jobs (PIDs
+785/798 unchanged), touching notes or changing sessions/credentials. Old hashed
+assets were retained and previous bundle copied to the system temporary folder
+calendar-before-shensha-dl_c8hcm. HTTP /calendar/ served the verified new script
+index-C7ttni5C.js. Public ordinary build uses index-B4DwZFng.js and remains
+local-only; Shensha settings do not sync between devices. Save unsaved notes and
+selections before refreshing. Secure offline clients may wait until all Calendar
+tabs close before activating. Publication is through main and the Pages workflow;
+verify the matching deployment run/live asset for final release status.
+
+### Active feature: Shensha first milestone (November 20)
+
+Owner authorized beginning Shensha after pausing recovery tooling. Implemented
+src/shensha.ts deterministic matching/pillars, src/useShensha.ts local scoped
+settings and src/ShenshaPanel.tsx settings/day results, integrated into App.tsx.
+All 18 named items and 3 custom slots are present. Reference target restrictions,
+noon/year/month ranges, midnight day rollover, repeat/hour gating and 空亡 rules
+are preserved. Settings save locally per note/account storage scope; no settings
+sync, notes-backup inclusion, encounter lists or birth-chart inference yet.
+
+24 app tests and isolated Chrome checks passed; 55 read-only original-engine
+comparisons passed. TypeScript/lint passed. Build artifacts are isolated under
+/tmp/calendar-shensha-build and /tmp/calendar-shensha-staging-build, with the staging bundle subsequently installed as recorded above. See docs/SHENSHA_FIRST_MILESTONE.md for exact test scope,
+commands, boundaries and remaining gaps. Changes are included in the Shensha release checkpoint.
+
+Next: review the first usable settings/day-details milestone, preserve its tested
+checkpoint, and activate only through a controlled step that protects unsaved
+notes. Then add encounter lists; settings synchronization is a later increment.
+Do not restart recovery development or modify Health Calendar/public deployment.
+
+### Prior checkpoint: recovery paused
+
 Recovery development is paused by owner decision on November 20. The owner chose to preserve the tested work and use Calendar normally rather than expand recovery tooling. The active project is
 `/Users/ruixingshi/Python/calendar182`, branch `sync-prototype`, not `reader_app`
 or `reader-notes`. This handoff is `calendar/HANDOFF.md` within Calendar182.
