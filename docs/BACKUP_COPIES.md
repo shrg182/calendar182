@@ -62,3 +62,36 @@ Asked whether Calendar182Backups was visible in iPad Files under iCloud Drive, o
 ## iPad manifest read confirmed — 2026-11-19
 
 Owner opened the selected bundle manifest on iPad and supplied format calendar182-sync-snapshot-v1, operations 25, records 1, SHA-256 `5469c09d5fe92314c8932b55db26a55bf2c6ef2c1a8f7bf7f24fe91e779c6541`. Recomputed the Mac iCloud-folder database checksum and verified its manifest/database: exact match and counts confirmed. Record as owner-reported independent-device manifest access, with its declared checksum matching the verified local bundle. It does not establish an independent iPad database download/checksum or restore. The earlier local restore drill and OS-reported upload evidence remain separate.
+
+
+## Automatic-copy retention — November 21, 2026
+
+The scheduled exporter now marks new destination manifests with
+`retentionSource: automatic`. After a fresh (at most 24-hour-old), verified copy
+exists, cleanup under the existing copy lock retains:
+
+- All hourly copies from the last 24 hours.
+- The latest copy per calendar day for ages 24 hours through 7 days.
+- The latest copy per ISO week for ages 7 through 28 days.
+- Older explicitly automatic copies expire.
+
+Daily/weekly buckets use America/Detroit. This is opportunistic retention: it
+cannot create missing history when the computer was off. A failed/stale/unverified
+replacement never permits cleanup. Checksum and SQLite integrity/count/session
+checks run before deletion; deletion targets only the two known files and the
+empty bundle directory, not recursive contents.
+
+Explicit CLI `copy` creates a manual copy; repeating it on an automatic bundle
+marks that bundle manual. Manual and legacy/unmarked bundles are never pruned.
+A true `keep` manifest flag, extra files, future dates, symlinks, corruption or
+unavailable files also protect a bundle. No legacy provenance is inferred from
+its filename. Local snapshot retention remains the separate existing 168-copy
+policy. File-based Shensha settings exports are unrelated and untouched.
+
+Activation: created and verified a fresh automatic bundle, restarted only the
+Calendar182 HTTP/HTTPS launch agents and verified HTTP plus CA-validated HTTPS
+responses. Service epoch, 28 operations and 6 sessions were unchanged. Inventory
+was 1 managed automatic bundle and 41 protected legacy bundles; none deleted.
+Earlier inventory found 40 bundles totalling 1,808,720 bytes; another hourly copy
+arrived before activation. Verification here is local filesystem verification,
+not an assertion that iCloud has finished uploading. 68 service tests passed.

@@ -4,6 +4,24 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Current: automatic destination-copy retention (November 21)
+
+Owner requested backup cleanup after seeing hourly iCloud folders. Implemented
+backup_retention.py with fresh-verified-replacement gate, shared copy lock,
+24-hour/all, 7-day/daily and 28-day/weekly buckets (America/Detroit). Only explicitly
+marked automatic copies are eligible. Manual exports pin copies; legacy/unmarked,
+corrupt, symlinked, future-dated or extra-file bundles remain protected. No inference
+of provenance. Local 168-copy policy and Shensha exported files are untouched.
+
+68 Python service tests passed. Live read-only preview showed 41 legacy bundles,
+none eligible for removal. Created verified automatic bundle ending 2a3393d5;
+restarted only Calendar182 HTTP/HTTPS agents to load the new scheduler and checked
+200 responses including CA-verified HTTPS. Epoch, 28 operations, 6 sessions
+unchanged. Final inventory: 1 managed copy, 41 protected, zero deletions. Future
+hourly copies now use retention. Older folders intentionally remain. No frontend
+or static bundle update was necessary. Recovery-tooling expansion remains paused.
+See docs/BACKUP_COPIES.md for policy and limits.
+
 ### Strength shown by border style
 
 Owner approved solid borders for 命, dashed for 运, dotted for unselected strength.

@@ -38,7 +38,7 @@ def verify_copy(bundle):
     return report
 
 
-def export_copy(snapshot, root):
+def export_copy(snapshot, root, automatic=False):
     from backups import readonly, validate
     snapshot = Path(snapshot).resolve(strict=True)
     if not re.fullmatch(r'calendar182-\d{8}T\d{12}Z-[0-9a-f]{8}\.sqlite3', snapshot.name):
@@ -69,6 +69,23 @@ def export_copy(snapshot, root):
             verify_copy(target)
             if json.loads((target / 'manifest.json').read_text())['sha256'] != expected_hash:
                 raise ValueError('Destination already holds different data; nothing overwritten')
+            if not automatic:
+                # An explicit manual export pins even a previously automatic copy.
+                metadata = json.loads((target / 'manifest.json').read_text())
+                if metadata.get('retentionSource') == 'automatic':
+                    fd, name = tempfile.mkstemp(prefix='.manifest-', dir=target)
+                    try:
+                        with os.fdopen(fd, 'w') as stream:
+                            metadata['retentionSource'] = 'manual'
+                            json.dump(metadata, stream, indent=2)
+                            stream.flush()
+                            os.fsync(stream.fileno())
+                        os.replace(name, target / 'manifest.json')
+                    finally:
+                        Path(name).unlink(missing_ok=True)
+            else:
+                from backup_retention import prune
+                prune(directory, target)
             return target
         temporary = Path(tempfile.mkdtemp(prefix='.incoming-', dir=directory))
         try:
@@ -80,7 +97,7 @@ def export_copy(snapshot, root):
                 os.fsync(copied.fileno())
             if digest(database) != expected_hash:
                 raise ValueError('Snapshot changed or copy was incomplete')
-            metadata = {'format': 'calendar182-sync-snapshot-v1', 'sha256': expected_hash, **report}
+            metadata = {'format': 'calendar182-sync-snapshot-v1', 'sha256': expected_hash, 'retentionSource': 'automatic' if automatic else 'manual', **report}
             manifest = temporary / 'manifest.json'
             fd = os.open(manifest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(fd, 'w') as stream:
@@ -95,6 +112,9 @@ def export_copy(snapshot, root):
                 os.fsync(parent)
             finally:
                 os.close(parent)
+            if automatic:
+                from backup_retention import prune
+                prune(directory, target)
             return target
         finally:
             # Only this attempt's own temporary directory is eligible for cleanup.

@@ -166,7 +166,7 @@ class BackupRunner:
                 available = snapshots(self.directory)
                 if available:
                     self.copy_in_progress = True
-                    copied = export_copy(available[-1], self.copy_root)
+                    copied = export_copy(available[-1], self.copy_root, automatic=True)
                     if copied:
                         self.record_copy_success()
                 self.copy_failed = False

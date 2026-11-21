@@ -154,3 +154,12 @@ PLAYWRIGHT_PATH=/path/to/playwright node prototype/sync/multiple-tabs.cjs
 The command-line service now creates verified local SQLite snapshots about hourly while running and retains up to 168. The default directory is `<data-dir>/backups/`; current staging uses `.data/calendar-stage/backups/`. HTTP/HTTPS processes coordinate through a shared process lock. `--backup-interval 0` disables; `--backup-interval` and `--backup-keep` configure cadence/retention. Startup and subsequent checks do not require restarting for each backup.
 
 Manual snapshots and safe restore-to-new-directory commands are documented in [backup/recovery](../../docs/BACKUP_RECOVERY.md). Restores always rotate the service identity and clear sessions, because a snapshot may predate acknowledged writes. They never overwrite the live database. Current browser outboxes/drafts must be preserved and reviewed before any actual recovery cutover. Credentials/keys are separate; same-disk snapshots are not off-device disaster recovery. No OS autostart or device trust settings were installed.
+
+
+### Destination retention (November 21)
+
+New scheduled iCloud/external copies are explicitly marked automatic and use
+24-hour / 7-day daily / 4-week weekly retention. Cleanup runs only after a fresh
+verified copy. Manual exports and unmarked legacy bundles are preserved.
+See [copy retention](../../docs/BACKUP_COPIES.md#automatic-copy-retention--november-21-2026).
+Local snapshot retention remains 168; Shensha exports are separate.
