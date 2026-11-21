@@ -4,6 +4,14 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Strength shown by border style
+
+Owner approved solid borders for 命, dashed for 运, dotted for unselected strength.
+Week and Day/hour badges use 2px borders with identical text weight and nature
+colors for all strengths. Green/red/gray now represent nature alone, with pale
+fills; retained category labels remain hidden. Matching, settings and backups are
+unchanged. Settings Help explains border meaning. Published to both calendars.
+
 ### Current: Shensha settings export/import
 
 Added Settings → Shensha settings backup, separate from note backup. Export
