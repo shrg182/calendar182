@@ -1,3 +1,4 @@
+import {ShenshaBackupPanel} from './ShenshaBackupPanel'
 import {useState} from 'react'
 import {useShensha} from './useShensha'
 import {contextForDate,evaluate,items,targetsFor,originLabels,encounteredTargets,effectFor} from './shensha'
@@ -20,6 +21,7 @@ export function ShenshaSettingsPanel({model}:{model:Model}){
  <fieldset><legend>{name} targets</legend><div className="shensha-targets">{targetsFor(id).map(target=><label key={target}><input type="checkbox" aria-label={target} checked={rule.targets.includes(target)} onChange={e=>update(id,rule.enabled,e.target.checked?[...rule.targets,target]:rule.targets.filter(t=>t!==target))}/>{target}{rule.targets.includes(target)&&<small className="target-origin">{originLabels[rule.origin||'unclassified']}</small>}</label>)}</div></fieldset></details>})}
  <div className="note-actions"><button onClick={model.save}>Save Shensha selections</button><button onClick={model.reload}>Load saved selections</button></div>
  {model.dirty&&<p>Unsaved Shensha selections. Day results use your last saved selections.</p>}<p role="status">{model.status}</p>
+ <ShenshaBackupPanel model={model}/>
  <details><summary>Shensha calculation conventions</summary><p>Matches use manually selected targets, not birth-chart inference. Year changes at 立春; month changes at the twelve 节. Year/month boundaries use estimated solar-term times evaluated at local noon. Day changes at midnight. Both 子 segments use that civil date’s day stem. Hour results require the same item to match at least two year/month/day pillars. Counts are per item and pillar. 空亡 is a moderating influence, not cancellation. Other matches retain their natural colors and strength; no percentage reduction is assigned. This is traditional rule matching, not a prediction.</p></details></section>
 }
 const clock=(minutes:number)=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`

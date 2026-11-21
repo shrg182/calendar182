@@ -4,6 +4,25 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Current: Shensha settings export/import
+
+Added Settings → Shensha settings backup, separate from note backup. Export
+contains saved targets/enabled flags, manual strengths, custom effects, time zone,
+and retained birth pillars in a versioned calendar182-shensha JSON envelope. No
+notes, account IDs or credentials. Import validates format/version, size (128 KB),
+zone and targets before showing a replacement preview with per-item differences,
+zone changes and retained birth-data changes. Explicit Replace applies to the
+current browser/account only; Cancel does not write. Unsaved settings disable both
+actions. Changed local settings invalidate the preview; other-tab changes and
+storage failures refuse replacement. Notes/drafts are untouched. Export/import is
+manual transfer, not automatic synchronization; blank zone uses receiving device.
+
+32 unit tests, typecheck/lint and isolated Chrome/WebKit backup browser checks
+passed: real downloaded-file roundtrip on a separate context, persistence/reload,
+invalid file, preview/cancel, dirty guard, note draft preservation, concurrent
+changes, write failure and mobile layout. Existing Shensha regression also checked.
+Release is published to both public and computer-hosted calendars.
+
 ### Kongwang moderates without cancellation
 
 Owner requested retaining each Shensha's nature/color when 空亡 occurs. Removed
