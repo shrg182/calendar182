@@ -102,3 +102,12 @@ main{padding-top:20px}.settings-title{font-size:28px}.date small{white-space:nor
  .shensha-row-controls{grid-template-columns:minmax(130px,1fr) 180px}
  .shensha-chips{min-height:0}
 }
+
+/* Direct, optional 命/运 choices alongside Enable. */
+.shensha-setting-row .shensha-row-controls{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px}
+.shensha-setting-row .shensha-row-controls .shensha-check{width:auto;flex:1 1 130px;margin:0;align-self:auto}
+.shensha-choice-pair,.shensha-custom-choices{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.shensha-choice-pair label,.shensha-custom-choices label{display:flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;white-space:nowrap}
+.shensha-custom-choices{flex-basis:100%;font-size:14px}
+.shensha-choice-pair label:has(input:checked),.shensha-custom-choices label:has(input:checked){color:#215c38}
+.shensha-row-controls input:focus-visible{outline:2px solid #39754c;outline-offset:3px}

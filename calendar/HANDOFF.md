@@ -14,6 +14,21 @@ per browser; automatic settings synchronization is available only through the
 computer-hosted Calendar. No origin migration, storage clearing or credentials
 are included. Verify Pages workflow and live asset before calling release complete.
 
+### Current: direct optional Shensha checkboxes (November 21)
+
+Owner approved replacing 命/运 dropdowns with two exclusive, individually
+clearable checkboxes beside Enable, including custom items. Neither checked maps
+to the existing unclassified value; selecting one clears the other. Enable is
+independent and retains selections. Custom Positive/Negative/Neutral use the same
+exclusive/clearable checkbox pattern; clearing all retains no effect choice.
+Removed visible Strength/Effect headings. Stored format, sync, calculation and
+backup behavior are unchanged; no migration. 33 app tests, typecheck/lint and
+Chrome/WebKit Shensha browser checks passed, including optional/exclusive choices,
+custom clearing, persistence, notes/drafts and responsive layouts. Screenshots
+reviewed. Publishing to public Pages and updating computer static assets without
+service restarts; preserve all settings and note stores. Prior settings transfer
+still awaits owner sign-in/explicit continuation; do not claim it is complete.
+
 ### Current: compact settings and computer-hosted sync choice (November 21)
 
 Owner showed updated public-site screenshots and chose using the existing
