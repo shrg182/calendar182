@@ -111,3 +111,7 @@ main{padding-top:20px}.settings-title{font-size:28px}.date small{white-space:nor
 .shensha-custom-choices{flex-basis:100%;font-size:14px}
 .shensha-choice-pair label:has(input:checked),.shensha-custom-choices label:has(input:checked){color:#215c38}
 .shensha-row-controls input:focus-visible{outline:2px solid #39754c;outline-offset:3px}
+
+.shensha-sync-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-width:0}
+.shensha-sync-controls p{font-size:13px;color:#52654e;margin:0;max-width:46ch}
+@media(max-width:600px){.shensha-sync-controls{flex-basis:100%}.shensha-sync-controls p{flex:1;min-width:140px}}

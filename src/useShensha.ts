@@ -27,5 +27,5 @@ function useLocalShensha(){
   localStorage.setItem(key,serialized)
   raw.current=serialized;setSaved(next);setDraft(next);setStatus('Shensha settings imported on this device.')
  }
- return {saved,draft,setDraft,status,dirty,save,reload,checkedSaved,importSettings,conflict:null,resolveConflict:async (_choice:'local'|'remote')=>{},computer:false,busy:false,ready:true}
+ return {saved,draft,setDraft,status,dirty,save,reload,checkedSaved,importSettings,conflict:null,resolveConflict:async (_choice:'local'|'remote')=>{},computer:false,syncState:'local',busy:false,ready:true}
 }

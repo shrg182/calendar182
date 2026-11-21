@@ -14,6 +14,25 @@ per browser; automatic settings synchronization is available only through the
 computer-hosted Calendar. No origin migration, storage clearing or credentials
 are included. Verify Pages workflow and live asset before calling release complete.
 
+### Current: nearby Shensha sync controls (November 21)
+
+Owner requested and authorized publication of Sync now plus compact status beside
+Shensha Save/Load. Added a settings-specific control through the existing computer
+workspace context, sharing its manual wake, authentication, account, pause and busy
+guards. Clicking sync never saves drafts. Settings status distinguishes loading,
+local-only/not uploaded, durable pending, syncing, synced, paused, unavailable and
+conflict review. Failures remain visible rather than being cleared by periodic
+settings refresh. Public Calendar explicitly reports local-only; only the computer
+build exposes the functional sync button. No backend or stored-format changes.
+
+33 app tests, typecheck/lint and public/computer builds passed. Chrome/WebKit
+computer browser checks exercise the nearby button, cross-device propagation,
+offline error/retry, pause/resume disabling, conflicts and draft preservation.
+Public browser regression verifies local-only wording and no misleading sync
+button. Publishing the static update to both calendars; retain old hashed assets,
+no service restart or data changes. Earlier manual transfer remains unverified;
+do not silently import the temporary public-settings export during this UI task.
+
 ### Current: direct optional Shensha checkboxes (November 21)
 
 Owner approved replacing 命/运 dropdowns with two exclusive, individually

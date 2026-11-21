@@ -51,6 +51,7 @@ export function ComputerStaging(){
 function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSession;localAccess:boolean;verifyLocal:boolean}){
   const [status,setStatus]=useState(localAccess?'Local notes opened. Saved edits stay queued until the computer session is verified.':'Ready to sync.'),[busy,setBusy]=useState(false)
   const [automatic,setAutomatic]=useState(true)
+  const [syncError,setSyncError]=useState<string|null>(null)
   const [enabled,setEnabled]=useState<boolean|null>(null),[changing,setChanging]=useState(false)
   const [authRequired,setAuthRequired]=useState(localAccess),[reconnecting,setReconnecting]=useState(false)
   const [needsVerification,setNeedsVerification]=useState(verifyLocal)
@@ -142,9 +143,11 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
         if(!result)return
         if(result.paused){if(active){setEnabled(false);setStatus('Computer sync paused. Notes and pending edits stay on this device.')}return}
         if(active)setStatus('settingsConflict' in result&&result.settingsConflict?'Notes synced. Shensha settings need review in Settings.':result.more||result.pending?'Changes pending; sync will continue.':'Saved notes and Shensha settings synced. Unsaved drafts stay on this device.')
+        if(active)setSyncError(null)
         retry=result.more||result.pending?250:15000
       }catch(error){
         if(active){
+          setSyncError(error instanceof Error?error.message:'Sync failed; local changes retained.')
           setStatus(error instanceof Error?error.message:'Sync failed; local changes retained.')
           if(error instanceof ComputerApiError&&error.status===401){retryAllowed=false;setAuthRequired(true)}
         }
@@ -159,7 +162,7 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
     window.addEventListener('online',kick);window.addEventListener('focus',kick);window.addEventListener('calendar-note-saved',kick);document.addEventListener('visibilitychange',kick)
     return ()=>{active=false;clearTimeout(timer);window.removeEventListener('online',kick);window.removeEventListener('focus',kick);window.removeEventListener('calendar-note-saved',kick);document.removeEventListener('visibilitychange',kick)}
   },[session,wake,automatic,enabled,authRequired])
-  return <ComputerStorageContext.Provider value={{account:session.account,enabled:enabled===true,busy:busy||changing||reconnecting||enabled===null,select}}><aside className="computer-sync" aria-label="Computer synchronization"><strong>Computer sync test · {session.account}</strong><p>Tabs share saved notes and this account’s storage selection. Unsaved drafts stay in their own tab. Keep the computer service running.</p><label><input type="checkbox" checked={automatic} disabled={enabled!==true||changing||authRequired} onChange={event=>setAutomatic(event.target.checked)}/> Automatic sync while this page is open</label><button disabled={busy||changing||enabled!==true||authRequired} onClick={()=>setWake(value=>value+1)}>Sync now</button><p role="status">{status}</p>
+  return <ComputerStorageContext.Provider value={{account:session.account,enabled:enabled===true,busy:busy||changing||reconnecting||enabled===null,syncing:busy,canSync:!busy&&!changing&&!reconnecting&&enabled===true&&!authRequired,syncError:authRequired?'Reconnect computer sync above. Saved settings are retained.':syncError,syncNow:()=>{if(!run.current&&!selectionPending.current&&!reconnecting&&enabled===true&&!authRequired)setWake(value=>value+1)},select}}><aside className="computer-sync" aria-label="Computer synchronization"><strong>Computer sync test · {session.account}</strong><p>Tabs share saved notes and this account’s storage selection. Unsaved drafts stay in their own tab. Keep the computer service running.</p><label><input type="checkbox" checked={automatic} disabled={enabled!==true||changing||authRequired} onChange={event=>setAutomatic(event.target.checked)}/> Automatic sync while this page is open</label><button disabled={busy||changing||enabled!==true||authRequired} onClick={()=>setWake(value=>value+1)}>Sync now</button><p role="status">{status}</p>
     {needsVerification&&<button onClick={()=>void verifySavedSession()}>Check computer connection</button>}
     {authRequired&&!needsVerification&&<form className="computer-login" aria-label="Reconnect computer synchronization" onSubmit={event=>{event.preventDefault();void reconnect()}}>
       <p>Reconnect <strong>{session.account}</strong> without reloading. Your notes, pending edits and unsaved drafts stay in place.</p>

@@ -27,5 +27,5 @@ export function useComputerShensha(enabled:boolean){
   try{if(dirty)throw Error('Load saved selections before resolving the conflict. Your draft is retained.');install(await saveComputerSettings(checkedSaved(),generation.current,choice))}
   catch(e){setStatus(e instanceof Error?e.message:'Could not resolve settings conflict.')}
  }
- return {saved,draft,setDraft,status,dirty,save,reload,checkedSaved,importSettings,conflict:state?.conflict??null,resolveConflict,computer:true,busy,ready:state!==null}
+ return {saved,draft,setDraft,status,dirty,save,reload,checkedSaved,importSettings,conflict:state?.conflict??null,resolveConflict,computer:true,syncState:!state?'loading':state.conflict?'conflict':state.pending?'pending':state.revision>0?'synced':'local',busy,ready:state!==null}
 }

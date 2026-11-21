@@ -1,9 +1,18 @@
+import {ComputerStorageContext} from './computerStorageContext'
 import {ShenshaBackupPanel} from './ShenshaBackupPanel'
-import {useRef,useState} from 'react'
+import {useContext,useRef,useState} from 'react'
 import {useShensha} from './useShensha'
 import {contextForDate,evaluate,items,targetsFor,originLabels,encounteredTargets,effectFor,stems,branches} from './shensha'
 import type {ItemId,ShenshaSettings} from './shensha'
 type Model=ReturnType<typeof useShensha>
+function ShenshaSyncControls({model}:{model:Model}){
+ const control=useContext(ComputerStorageContext)
+ let message='Saved on this device only.'
+ if(model.computer&&control){
+  message=model.syncState==='loading'?'Loading saved settings…':model.syncState==='conflict'?'Settings need conflict review below.':!control.enabled?'Sync paused. Saved settings stay on this device.':control.syncing?'Syncing saved settings…':control.syncError?`Sync unavailable. Saved settings are retained. ${control.syncError}`:model.syncState==='pending'?'Saved on this device · waiting to sync.':model.syncState==='synced'?'Shensha settings synced.':'Saved on this device · no settings uploaded yet.'
+ }
+ return <div className="shensha-sync-controls">{model.computer&&control&&<button type="button" aria-label="Sync Shensha now" disabled={!model.ready||model.busy||!control.canSync} onClick={control.syncNow}>Sync now</button>}<p role="status" aria-label="Shensha synchronization status">{message}</p></div>
+}
 function ShenshaSettingRow({id,name,kind,model}:{id:ItemId;name:string;kind:'shen'|'sha'|'custom';model:Model}){
  const [query,setQuery]=useState(''),[open,setOpen]=useState(false)
  const summary=useRef<HTMLElement|null>(null)
@@ -35,7 +44,7 @@ export function ShenshaSettingsPanel({model}:{model:Model}){
  return visible.length?<fieldset className="shensha-setting-group" key={kind}><legend>{kind==='shen'?'神 · Shen':kind==='sha'?'煞 · Sha':'自定义 · Custom'}</legend>{visible.map(([id,name])=><ShenshaSettingRow key={id} id={id} name={name} kind={kind} model={model}/>)}</fieldset>:null
  })}
  {!items.some(([id,name])=>(id+' '+name).toLowerCase().includes(search.toLowerCase()))&&<p role="status">No matching Shensha.</p>}
- <div className="note-actions"><button onClick={model.save}>Save Shensha selections</button><button onClick={model.reload}>Load saved selections</button></div>
+ <div className="note-actions"><button onClick={model.save}>Save Shensha selections</button><button onClick={model.reload}>Load saved selections</button><ShenshaSyncControls model={model}/></div>
  {model.dirty&&<p>Unsaved Shensha selections. Day results use your last saved selections.</p>}<p role="status">{model.status}</p>
  </fieldset>
  {model.conflict&&<section aria-label="Shensha sync conflict"><h3>Review Shensha settings conflict</h3><p>Another device saved different settings. Export your local settings to keep a separate copy before choosing. This replaces the complete settings version, including retained birth data.</p><details><summary>This device’s saved settings</summary>{describe(model.saved)}</details><details><summary>Computer settings</summary>{model.conflict.settings&&describe(model.conflict.settings)}</details><button disabled={model.dirty} onClick={()=>void model.resolveConflict('local')}>Keep this device’s settings</button><button disabled={model.dirty} onClick={()=>void model.resolveConflict('remote')}>Use computer settings</button></section>}

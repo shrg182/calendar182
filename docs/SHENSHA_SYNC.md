@@ -4,7 +4,9 @@ The computer-hosted Calendar synchronizes saved Shensha settings through the sam
 account/session and computer-sync pause control as notes. The public GitHub Pages
 calendar stays local-only. Keep the computer awake and the Calendar open for
 scheduled synchronization (normally every 15 seconds); Sync now also transfers
-settings. Settings import queues the imported version in the same way as Save.
+settings. The same Sync now action is available beside Shensha Save/Load, with
+a compact settings-specific status for pending, synced, paused, unavailable and
+conflicting versions. It does not save unsaved edits. Settings import queues the imported version in the same way as Save.
 Unsaved settings and note drafts are never uploaded.
 
 The synchronized version includes targets, enabled flags, manual strengths,
