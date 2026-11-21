@@ -141,7 +141,7 @@ function ComputerWorkspace({session,localAccess,verifyLocal}:{session:ComputerSe
         const result=await withComputerLock(sync)
         if(!result)return
         if(result.paused){if(active){setEnabled(false);setStatus('Computer sync paused. Notes and pending edits stay on this device.')}return}
-        if(active)setStatus(result.more||result.pending?'Changes pending; sync will continue.':'Saved notes synced. Unsaved drafts stay on this device.')
+        if(active)setStatus('settingsConflict' in result&&result.settingsConflict?'Notes synced. Shensha settings need review in Settings.':result.more||result.pending?'Changes pending; sync will continue.':'Saved notes and Shensha settings synced. Unsaved drafts stay on this device.')
         retry=result.more||result.pending?250:15000
       }catch(error){
         if(active){

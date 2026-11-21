@@ -19,8 +19,8 @@ export function ShenshaBackupPanel({model}:{model:ReturnType<typeof useShensha>}
  const describe=(rule:Preview['settings']['selections'][typeof items[number][0]])=>`${rule.enabled?'On':'Off'} · ${rule.targets.join('、')||'No targets'} · ${originLabels[rule.origin||'unclassified']}${rule.effect?' · '+rule.effect:''}`
  const stale=preview&&JSON.stringify(model.saved)!==preview.expected
  return <section className="shensha-backup" aria-label="Shensha settings backup"><h3>Shensha settings backup</h3><p>Export saved targets, strengths, custom effects, time zone and retained birth-pillar data. Notes and account credentials are not included. The file can be imported on another device.</p>
- <button disabled={model.dirty||reading} onClick={exportSettings}>Export Shensha settings</button>
- <label htmlFor="shensha-import">Import Shensha settings</label><input id="shensha-import" type="file" accept=".json,application/json" disabled={model.dirty||reading} onChange={e=>{void choose(e.target.files?.[0]);e.target.value=''}}/>
+ <button disabled={model.dirty||model.busy||!model.ready||reading} onClick={exportSettings}>Export Shensha settings</button>
+ <label htmlFor="shensha-import">Import Shensha settings</label><input id="shensha-import" type="file" accept=".json,application/json" disabled={model.dirty||model.busy||!model.ready||reading} onChange={e=>{void choose(e.target.files?.[0]);e.target.value=''}}/>
  {model.dirty&&<p>Save or load your selections before exporting or importing settings.</p>}{reading&&<p role="status">Reading settings backup…</p>}
  {preview&&<div className="import-preview"><h4>Review Shensha import</h4><p>Backup: {new Date(preview.exportedAt).toLocaleString()}. {changed.length} items change; {items.filter(([id])=>preview.settings.selections[id].enabled).length} enabled after import.</p>
  <p>Time zone: {preview.current.zone||'Device time zone'} → {preview.settings.zone||'Device time zone'}. A device time zone follows the receiving device.</p>
@@ -28,6 +28,6 @@ export function ShenshaBackupPanel({model}:{model:ReturnType<typeof useShensha>}
  {changed.length>0&&<ul className="shensha-import-changes">{changed.map(([id,name])=><li key={id}><strong>{name}</strong><div>Current: {describe(preview.current.selections[id])}</div><div>Import: {describe(preview.settings.selections[id])}</div></li>)}</ul>}
  <p>This replaces all Shensha settings in the current browser/account. Export the current settings first if you want to keep a copy.</p>
  {stale&&<p role="alert">Selections changed since this preview. Choose the file again.</p>}
- <div className="note-actions"><button disabled={model.dirty||reading||Boolean(stale)} onClick={()=>{setError('');try{model.importSettings(preview.settings,preview.expected);setPreview(null);setMessage('Shensha settings imported on this device.')}catch(e){setError(e instanceof Error?e.message:'Import failed.')}}}>Replace Shensha settings</button><button onClick={()=>{sequence.current++;setPreview(null);setReading(false);setError('')}}>Cancel Shensha import</button></div></div>}
+ <div className="note-actions"><button disabled={model.dirty||model.busy||!model.ready||reading||Boolean(stale)} onClick={async()=>{setError('');try{await model.importSettings(preview.settings,preview.expected);setPreview(null);setMessage('Shensha settings imported on this device.')}catch(e){setError(e instanceof Error?e.message:'Import failed.')}}}>Replace Shensha settings</button><button onClick={()=>{sequence.current++;setPreview(null);setReading(false);setError('')}}>Cancel Shensha import</button></div></div>}
  {error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}</section>
 }

@@ -54,3 +54,34 @@ main{padding-top:20px}.settings-title{font-size:28px}.date small{white-space:nor
 :is(.week-matches,.shensha-badges) .effect-neutral:is(.strength-ming,.strength-yun,.strength-unclassified){color:#606862;background:#f0f2f0}
 :is(.week-matches,.shensha-badges) .effect-unclassified:is(.strength-ming,.strength-yun,.strength-unclassified){color:#606862;background:transparent}
 .shensha-badges .encounter-origins span{font-weight:400;text-decoration:none}
+
+/* Health Calendar's grouped rows and visible target chips. */
+.shensha-editor{border:0;padding:0;margin:0;min-width:0}
+.shensha-editor>label{display:block;margin:12px 0}
+.shensha-setting-group{min-width:0;margin:20px 0;border:1px solid #d9e3da;border-radius:10px;padding:12px}
+.shensha-setting-group>legend{font-weight:700;padding:0 6px}
+.shensha-setting-row{display:grid;grid-template-columns:minmax(155px,1fr) minmax(0,2fr);gap:16px;align-items:start;border:0;border-radius:0;padding:14px 0;margin:0}
+.shensha-setting-row+.shensha-setting-row{border-top:1px solid #e2e8df}
+.shensha-row-controls,.shensha-target-picker{min-width:0}
+.shensha-row-controls .shensha-check{font-weight:650;margin-bottom:8px}
+.shensha-row-controls select{width:100%;margin:4px 0 10px;border:1px solid #bac9bf;border-radius:6px;padding:8px;background:#fff}
+.shensha-strength,.shensha-effect{display:block;font-size:14px}
+.shensha-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.shensha-chip{padding:8px 10px;min-height:44px;min-width:44px;border:1px solid #cad7cc;border-radius:8px;background:#f5f8f3;color:#284c36;font:inherit;white-space:nowrap}
+.shensha-chip:hover:not(:disabled){background:#e5f2e8;border-color:#528364}
+.shensha-no-targets,.shensha-target-picker>small{font-size:13px;color:#596953;line-height:1.6}
+.shensha-target-picker>small{display:block;margin-top:6px}
+.shensha-target-picker summary{padding:10px 12px;min-height:44px;box-sizing:border-box;border:1px solid #bac9bf;border-radius:6px;background:#fff}
+.shensha-target-picker summary[aria-disabled=true]{color:#71806d;cursor:default;background:#f7f8f5}
+.shensha-target-count{color:#596953;font-size:13px}
+.shensha-options{max-height:320px;overflow:auto;overscroll-behavior:contain;border:1px solid #d9e3da;border-radius:8px;margin-top:8px;padding:10px}
+.shensha-options>label{display:block;font-size:14px}
+.shensha-options fieldset{border:0;padding:8px 0;margin:8px 0;min-width:0}
+.shensha-options legend{font-size:13px;font-weight:650;color:#596953}
+.shensha-options .shensha-targets{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:4px}
+.shensha-options .shensha-targets label{flex-wrap:nowrap;border-radius:6px;padding:0 4px;gap:6px;cursor:pointer}
+.shensha-options .shensha-targets label:has(input:checked){background:#e5f2e8;color:#215c38}
+.shensha-target-picker :focus-visible{outline:2px solid #39754c;outline-offset:3px}
+@media(max-width:600px){.shensha-setting-group{padding:10px}.shensha-setting-row{grid-template-columns:minmax(0,1fr);gap:8px}.shensha-row-controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:start}.shensha-row-controls .shensha-check{width:100%;margin:0}.shensha-strength,.shensha-effect{flex:1;min-width:120px}.shensha-options{max-height:300px}.shensha-chip{padding:8px}.shensha-targets{gap:4px}}
+
+.shensha-setting-row select{appearance:none;box-sizing:border-box;width:100%;height:44px;min-height:44px;padding:8px 30px 8px 10px;border:1px solid #bac9bf;border-radius:6px;background-color:#fff;color:#243e32;font:inherit;font-size:16px;background-image:linear-gradient(45deg,transparent 50%,#59705e 50%),linear-gradient(135deg,#59705e 50%,transparent 50%);background-position:calc(100% - 16px) 19px,calc(100% - 11px) 19px;background-size:5px 5px;background-repeat:no-repeat}

@@ -2,7 +2,10 @@ import {useEffect,useRef,useState} from 'react'
 import {storageScope} from './notes'
 import type {ShenshaSettings} from './shensha'
 import {emptySettings,validateSettings} from './shensha'
-export function useShensha(){
+import {isComputerSettings} from './shenshaSync'
+import {useComputerShensha} from './useComputerShensha'
+export function useShensha(){const computer=isComputerSettings();const remote=useComputerShensha(computer),local=useLocalShensha();return computer?remote:local}
+function useLocalShensha(){
  const key=`calendar182.shensha.v1:${storageScope()}`
  const [initial]=useState(()=>{try{const raw=localStorage.getItem(key);return {raw,value:raw?validateSettings(JSON.parse(raw)):emptySettings(),error:''}}catch{return {raw:null,value:emptySettings(),error:'Saved selections could not be read. Existing storage has not been replaced.'}}})
  const raw=useRef(initial.raw)
@@ -24,5 +27,5 @@ export function useShensha(){
   localStorage.setItem(key,serialized)
   raw.current=serialized;setSaved(next);setDraft(next);setStatus('Shensha settings imported on this device.')
  }
- return {saved,draft,setDraft,status,dirty,save,reload,checkedSaved,importSettings}
+ return {saved,draft,setDraft,status,dirty,save,reload,checkedSaved,importSettings,conflict:null,resolveConflict:async (_choice:'local'|'remote')=>{},computer:false,busy:false,ready:true}
 }

@@ -37,6 +37,14 @@ def validate(db):
     current = db.execute('SELECT account,date,revision FROM current ORDER BY account,date').fetchall()
     if latest != current:
         raise ValueError('Current records do not match accepted history')
+    if 'shensha_changes' in tables:
+        from shensha_settings import validate_settings
+        previous = {}
+        for account, revision, base, raw in db.execute('SELECT account,revision,base,settings FROM shensha_changes ORDER BY revision'):
+            if base != previous.get(account, 0):
+                raise ValueError('Shensha revisions do not match accepted history')
+            validate_settings(json.loads(raw))
+            previous[account] = revision
     return {'operations': db.execute('SELECT COUNT(*) FROM changes').fetchone()[0], 'records': len(current)}
 
 

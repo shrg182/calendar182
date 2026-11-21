@@ -40,6 +40,10 @@ class Store:
               CREATE TABLE IF NOT EXISTS current (
                 account TEXT NOT NULL, date TEXT NOT NULL, revision INTEGER NOT NULL,
                 PRIMARY KEY(account,date));
+              CREATE TABLE IF NOT EXISTS shensha_changes (
+                revision INTEGER PRIMARY KEY AUTOINCREMENT, account TEXT NOT NULL,
+                id TEXT NOT NULL, base INTEGER NOT NULL, settings TEXT NOT NULL,
+                UNIQUE(account,id));
               CREATE TABLE IF NOT EXISTS sessions (
                 hash TEXT PRIMARY KEY, account TEXT NOT NULL, expires INTEGER NOT NULL);
             ''')
@@ -112,6 +116,41 @@ class Store:
             rows = db.execute('SELECT * FROM changes WHERE account=? AND date=? ORDER BY revision DESC LIMIT 100',
                               (account, date)).fetchall()
         return [self.record(row) for row in rows]
+
+    def shensha(self, account):
+        with self.connect() as db:
+            return self.shensha_record(db.execute(
+                'SELECT * FROM shensha_changes WHERE account=? ORDER BY revision DESC LIMIT 1', (account,)).fetchone())
+
+    @staticmethod
+    def shensha_record(row):
+        return {'revision': row['revision'], 'settings': json.loads(row['settings'])} if row else {'revision': 0, 'settings': None}
+
+    def write_shensha(self, account, operation):
+        if not isinstance(operation, dict):
+            raise ValueError('Invalid settings operation')
+        oid, base, settings = (operation.get(k) for k in ('id', 'base', 'settings'))
+        if not isinstance(oid, str) or not re.fullmatch(r'[A-Za-z0-9_-]{16,100}', oid) or type(base) is not int or base < 0:
+            raise ValueError('Invalid settings operation')
+        # Validate the versioned settings independently of the browser.
+        from shensha_settings import validate_settings
+        value = json.dumps(validate_settings(settings), ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            old = db.execute('SELECT * FROM shensha_changes WHERE account=? AND id=?', (account, oid)).fetchone()
+            if old:
+                if old['base'] != base or old['settings'] != value:
+                    raise ValueError('Operation ID reused')
+                result = {'accepted': True, **self.shensha_record(old)}
+            else:
+                current = db.execute('SELECT * FROM shensha_changes WHERE account=? ORDER BY revision DESC LIMIT 1', (account,)).fetchone()
+                if (current['revision'] if current else 0) != base:
+                    result = {'accepted': False, **self.shensha_record(current)}
+                else:
+                    revision = db.execute('INSERT INTO shensha_changes(account,id,base,settings) VALUES (?,?,?,?)', (account, oid, base, value)).lastrowid
+                    result = {'accepted': True, 'revision': revision, 'settings': json.loads(value)}
+            db.commit()
+            return result
 
 
 class LoginLimiter:
@@ -233,6 +272,8 @@ class Handler(BaseHTTPRequestHandler):
             query = parse_qs(path.query)
             if path.path == '/api/session':
                 self.send(200, {'account': account, 'epoch': self.server.store.epoch})
+            elif path.path == '/api/shensha':
+                self.send(200, {'epoch': self.server.store.epoch, **self.server.store.shensha(account)})
             elif path.path == '/api/backup-status':
                 runner = self.server.backup_runner
                 status = runner.health() if runner else {
@@ -286,6 +327,11 @@ class Handler(BaseHTTPRequestHandler):
             account = self.account()
             if not account:
                 self.send(401, {'error': 'Test sign-in required'})
+            elif path == '/api/shensha':
+                if body.get('epoch') != self.server.store.epoch:
+                    self.send(409, {'error': 'Service identity changed'})
+                else:
+                    self.send(200, {'epoch': self.server.store.epoch, **self.server.store.write_shensha(account, body.get('operation'))})
             elif path == '/api/operations':
                 if body.get('epoch') != self.server.store.epoch:
                     self.send(409, {'error': 'Service identity changed; preserve local data before resetting'})

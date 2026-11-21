@@ -4,6 +4,63 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Public release correction (November 21)
+
+Owner screenshot confirmed GitHub Pages still showed the old settings layout;
+previous activations updated only the computer-hosted bundle. Owner requested the
+missing update on iPad/phone. Publishing the tested settings layout and supporting
+computer-settings sync checkpoint through main/Pages. Public settings remain local
+per browser; automatic settings synchronization is available only through the
+computer-hosted Calendar. No origin migration, storage clearing or credentials
+are included. Verify Pages workflow and live asset before calling release complete.
+
+### Current: Health Calendar settings presentation (November 21)
+
+Owner approved adopting Health Calendar's Shensha settings format/styling.
+Replaced per-item collapsed editors with grouped 神/煞/自定义 rows, visible target
+chips with removal buttons, searchable expandable target pickers and allowed
+天干/地支/干支 sections. Enable, manual 命/运/未选 and custom effect controls stay
+visible. Disabled items retain targets; explicit Save/Load, sync conflicts and
+backups are preserved. Phone rows stack; tablet/desktop use two columns, 44px
+controls and bounded scrolling pickers. Search and Escape/focus handling verified.
+Original Health Calendar was read only; no matching or storage changes.
+
+33 unit tests, typecheck/lint, ordinary/computer builds passed. Updated existing
+Chrome/WebKit Shensha browser checks cover chips, filtering, empty results,
+disabling/re-enabling, strengths, existing calendar/note/draft regressions and
+320/390/820/1280 layouts. Reviewed phone/desktop screenshots. Computer sync browser
+regression passed; its manual-sync helper now waits for a completed settings GET
+and enabled sync control, and reload assertions await the asynchronous refresh.
+
+Activated only the computer-hosted static bundle, retaining previous hashed assets
+and a temporary rollback copy. HTTP and CA-validated HTTPS returned the exact new
+index with 200 responses. No service restart or note/settings migration. Ignored
+settings-layout-activation.json records the rollback location. Public source is
+updated locally; no GitHub Pages deployment was made. Save drafts before refreshing.
+
+### Current: Shensha settings sync (November 21)
+
+Owner approved proceeding with cross-device Shensha settings synchronization.
+Implemented account-scoped IndexedDB settings persistence, one-time validated
+legacy migration, durable pending saves, revision/epoch guards, immutable retry
+acknowledgements and explicit whole-settings conflict choices. Existing computer
+sync controls also govern settings. Drafts remain local. Public build stays local.
+Shensha import now awaits durable saving; settings snapshots retain server history.
+Notes/outboxes/accounts/credentials are not migrated or cleared. Recovery expansion
+remains paused. See docs/SHENSHA_SYNC.md for behavior and verification scope.
+
+33 app tests and 73 Python service/backup tests passed, with clean typecheck/lint.
+Chrome/WebKit two-profile tests cover transfer, offline conflicts, both choices,
+legacy migration, draft retention, reload, account isolation and mobile layout.
+Existing local Shensha backup/import browser regression passed. Activated the tested computer-hosted bundle after a fresh verified snapshot.
+Restarted only Calendar HTTP/HTTPS LaunchAgents. Both returned 200 (HTTPS with
+explicit CA validation); database integrity passed. Live epoch, 28 note operations,
+current-record count and six sessions were unchanged. Previous bundle retained in
+the system temporary directory; ignored settings-sync-activation.json records it.
+No public deployment was made. Next: save drafts, close older Calendar tabs, reopen
+on both devices and use the same account. Review any differing preexisting settings
+in Settings; no new physical-device acceptance is claimed.
+
 ### Current: automatic destination-copy retention (November 21)
 
 Owner requested backup cleanup after seeing hourly iCloud folders. Implemented

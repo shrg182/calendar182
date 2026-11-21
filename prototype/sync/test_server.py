@@ -126,6 +126,25 @@ class HTTPTests(unittest.TestCase):
     def login(self, account):
         return self.request('/api/login', {'account': account, 'token': self.server.credentials[account]})
 
+    def test_shensha_auth_origin_epoch_retry_and_account_isolation(self):
+        from test_shensha import settings
+        with self.assertRaises(urllib.error.HTTPError) as error:
+            self.request('/api/shensha')
+        self.assertEqual(error.exception.code, 401)
+        error.exception.close()
+        self.login('account-a').close()
+        body = {'epoch': self.server.store.epoch, 'operation': {'id': 'settings-operation-0001', 'base': 0, 'settings': settings()}}
+        for payload, origin, code in [(body, False, 403), ({**body, 'epoch': 'wrong'}, True, 409)]:
+            with self.assertRaises(urllib.error.HTTPError) as error:
+                self.request('/api/shensha', payload, origin=origin)
+            self.assertEqual(error.exception.code, code)
+            error.exception.close()
+        first = json.load(self.request('/api/shensha', body))
+        self.assertTrue(first['accepted'])
+        self.assertEqual(json.load(self.request('/api/shensha', body)), first)
+        self.login('account-b').close()
+        self.assertEqual(json.load(self.request('/api/shensha'))['revision'], 0)
+
     def test_login_throttle_recovers_without_breaking_existing_session(self):
         now = [0.0]
         self.server.login_limiter = LoginLimiter(limit=3, clock=lambda: now[0])

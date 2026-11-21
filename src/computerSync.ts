@@ -1,3 +1,4 @@
+import {syncShensha} from './shenshaSync.ts'
 import {acknowledgeOperation,applyChanges,syncSnapshot,readComputerSyncEnabled} from './notes.ts'
 import type {ChangePage,RemoteNote} from './notes.ts'
 
@@ -61,6 +62,7 @@ export async function syncComputer(session:ComputerSession){
     const page=parseChangePage(await computerApi(`changes?cursor=${cursor}&limit=100`,undefined,session.account),cursor,session.epoch)
     await applyChanges(page,session.epoch);cursor=(await syncSnapshot(session.epoch)).cursor;more=page.hasMore
   }
+  const settingsConflict=await syncShensha(session)
   const after=await syncSnapshot(session.epoch)
-  return {pending:after.pending.length,more,paused:false}
+  return {pending:after.pending.length,more,paused:false,settingsConflict}
 }
