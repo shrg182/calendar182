@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import {useShensha} from './useShensha'
-import {contextForDate,evaluate,items,targetsFor,originLabels,encounteredTargets,strengthLabels,effectFor} from './shensha'
+import {contextForDate,evaluate,items,targetsFor,originLabels,encounteredTargets,effectFor} from './shensha'
 import type {ItemId,ShenshaSettings} from './shensha'
 type Model=ReturnType<typeof useShensha>
 export function ShenshaSettingsPanel({model}:{model:Model}){
@@ -28,7 +28,7 @@ export function ShenshaDay({date,settings}:{date:Date;settings:ShenshaSettings;o
  const context=contextForDate(date,settings.zone),result=evaluate(context,settings.selections)
  const [h,m]=time.split(':').map(Number),minute=Number.isFinite(h*60+m)?h*60+m:720
  const hour=result.hours.find(slot=>slot.startMinute<=minute&&slot.endMinute>minute)!
- function badges(found:ItemId[],pillar:string,hourMatch=false){return found.length?<ul className={`shensha-badges `}>{found.map(id=>{const item=items.find(item=>item[0]===id)!,count=result.counts[id]+(hourMatch?1:0),sign=effectFor(id,settings)==='positive'?'+':effectFor(id,settings)==='negative'?'-':'';return <li key={id} className={`effect-${effectFor(id,settings)} ${result.inactive&&id!=='kongwang'?'inactive':''} strength-${settings.selections[id].origin||'unclassified'}`} data-shensha={id}>{item[1]}{count>1&&sign?<span aria-label={`${count} matching pillars`}> {sign.repeat(count)}</span>:null}<div className="encounter-origins">{encounteredTargets(pillar,id,settings).map(({target,origin})=><span key={target} className={`origin-${origin}`} data-origin={origin}>{target} · {strengthLabels[origin]}</span>)}</div></li>})}</ul>:null}
+ function badges(found:ItemId[],pillar:string,hourMatch=false){return found.length?<ul className={`shensha-badges `}>{found.map(id=>{const item=items.find(item=>item[0]===id)!,count=result.counts[id]+(hourMatch?1:0),sign=effectFor(id,settings)==='positive'?'+':effectFor(id,settings)==='negative'?'-':'';return <li key={id} className={`effect-${effectFor(id,settings)} ${result.inactive&&id!=='kongwang'?'inactive':''} strength-${settings.selections[id].origin||'unclassified'}`} data-shensha={id}>{item[1]}{count>1&&sign?<span aria-label={`${count} matching pillars`}> {sign.repeat(count)}</span>:null}<div className="encounter-origins">{encounteredTargets(pillar,id,settings).map(({target,origin})=><span key={target} className={`origin-${origin}`} data-origin={origin}>{target}</span>)}</div></li>})}</ul>:null}
  if(!Object.values(result.groups).some(group=>group.length))return null
  const hasHours=result.hours.some(slot=>slot.found.length)
  return <section className="shensha-day" aria-label="Shensha day results"><h3>神煞</h3>

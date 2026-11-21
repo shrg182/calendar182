@@ -4,6 +4,13 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Display-only label removal
+
+Owner requested removing 命/运 names from Shensha displays. Week badges show
+only item names; day/hour badges retain matching targets but omit category text.
+Strength colors/classes, stored choices and Settings selectors remain unchanged.
+Published to both calendars after typecheck, lint and browser verification.
+
 ### Current: seven equal columns and compact Day results
 
 Week button opens today's Sunday–Saturday week. Horizontal movement then shifts

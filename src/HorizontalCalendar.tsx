@@ -2,7 +2,7 @@ import {useMemo,useRef,useState} from 'react'
 import type {ReactNode,PointerEvent,WheelEvent} from 'react'
 import {dateKey,dateLabels} from './calendar'
 import {shiftView} from './calendarNavigation'
-import {contextForDate,evaluate,items,strengthLabels,effectFor} from './shensha'
+import {contextForDate,evaluate,items,effectFor} from './shensha'
 import type {ShenshaSettings} from './shensha'
 const full=new Intl.DateTimeFormat('en-US',{dateStyle:'full'})
 const short=new Intl.DateTimeFormat('en-US',{weekday:'short'})
@@ -30,5 +30,5 @@ export function HorizontalCalendar({view,date,selected,today,settings,note,onDat
 }
 function MatchPreview({date,settings}:{date:Date;settings:ShenshaSettings}){
  const result=useMemo(()=>evaluate(contextForDate(date,settings.zone),settings.selections),[date,settings]);const found=items.filter(([id])=>result.counts[id]>0)
- return <div className="week-matches">{found.map(([id,name])=><span key={id} className={`summary-badge effect-${effectFor(id,settings)} strength-${settings.selections[id].origin||'unclassified'} ${result.inactive&&id!=='kongwang'?'inactive':''}`}>{name}<br/>{strengthLabels[settings.selections[id].origin||'unclassified']}</span>)}</div>
+ return <div className="week-matches">{found.map(([id,name])=><span key={id} className={`summary-badge effect-${effectFor(id,settings)} strength-${settings.selections[id].origin||'unclassified'} ${result.inactive&&id!=='kongwang'?'inactive':''}`}>{name}</span>)}</div>
 }
