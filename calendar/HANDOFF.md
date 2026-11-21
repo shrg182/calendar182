@@ -14,6 +14,20 @@ per browser; automatic settings synchronization is available only through the
 computer-hosted Calendar. No origin migration, storage clearing or credentials
 are included. Verify Pages workflow and live asset before calling release complete.
 
+### Current: compact settings and computer-hosted sync choice (November 21)
+
+Owner showed updated public-site screenshots and chose using the existing
+computer-hosted Calendar for automatic sync, rather than adding a public backend.
+Public-site browser settings must be exported/imported once into the same computer
+account; no automatic cross-origin migration or public-site sync is implied.
+Tightened desktop/tablet editor width and aligned enable/strength controls, while
+preserving the accepted phone layout. Chrome/WebKit Shensha browser checks and
+lint/typecheck passed. Existing public settings were exported through the user's
+Chrome UI to /tmp/calendar182-shensha-transfer.json; source data remains intact.
+A new incognito computer-hosted tab is open at the retained LAN address. Awaiting
+the owner's same-account sign-in before UI import/verification. Do not put settings
+contents or credentials in Git. Transfer status will be recorded after completion.
+
 ### Current: Health Calendar settings presentation (November 21)
 
 Owner approved adopting Health Calendar's Shensha settings format/styling.

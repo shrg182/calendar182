@@ -85,3 +85,20 @@ main{padding-top:20px}.settings-title{font-size:28px}.date small{white-space:nor
 @media(max-width:600px){.shensha-setting-group{padding:10px}.shensha-setting-row{grid-template-columns:minmax(0,1fr);gap:8px}.shensha-row-controls{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:start}.shensha-row-controls .shensha-check{width:100%;margin:0}.shensha-strength,.shensha-effect{flex:1;min-width:120px}.shensha-options{max-height:300px}.shensha-chip{padding:8px}.shensha-targets{gap:4px}}
 
 .shensha-setting-row select{appearance:none;box-sizing:border-box;width:100%;height:44px;min-height:44px;padding:8px 30px 8px 10px;border:1px solid #bac9bf;border-radius:6px;background-color:#fff;color:#243e32;font:inherit;font-size:16px;background-image:linear-gradient(45deg,transparent 50%,#59705e 50%),linear-gradient(135deg,#59705e 50%,transparent 50%);background-position:calc(100% - 16px) 19px,calc(100% - 11px) 19px;background-size:5px 5px;background-repeat:no-repeat}
+
+/* Keep settings rows compact and aligned on tablet and desktop. */
+@media(min-width:601px){
+ .shensha-editor{max-width:1120px}
+ .shensha-setting-row{grid-template-columns:minmax(310px,370px) minmax(0,1fr);gap:20px;padding:12px 0}
+ .shensha-row-controls{display:grid;grid-template-columns:minmax(120px,1fr) 180px;column-gap:12px;align-items:end}
+ .shensha-row-controls .shensha-check{margin:0;min-height:44px;align-self:end}
+ .shensha-row-controls select{margin:4px 0 0}
+ .shensha-effect{grid-column:2;margin-top:8px}
+ .shensha-chips{min-height:44px;align-items:center;margin:0 0 6px}
+ .shensha-setting-group{padding:10px 14px}
+}
+@media(min-width:601px) and (max-width:900px){
+ .shensha-setting-row{grid-template-columns:minmax(0,1fr);gap:8px}
+ .shensha-row-controls{grid-template-columns:minmax(130px,1fr) 180px}
+ .shensha-chips{min-height:0}
+}
