@@ -31,11 +31,11 @@ test('repeat counts use pillars not target count; hour strengthening is per item
  assert.ok(r.hours.some(h=>h.found.includes('custom1')))
  assert.ok(r.hours.every(h=>!h.found.includes('custom2')))
 })
-test('Kongwang suppresses the whole date only when a baseline pillar matches',()=>{
+test('Kongwang is recorded without cancelling any other matches',()=>{
  const c=contextForDate(date('2026-10-22'),'America/Detroit'),s=emptySettings().selections
- s.kongwang={enabled:true,targets:['子']};assert.equal(evaluate(c,s).inactive,false)
+ s.kongwang={enabled:true,targets:['子']};assert.equal(evaluate(c,s).hasKongwang,false)
  assert.ok(evaluate(c,s).hours.every(h=>!h.found.includes('kongwang')))
- s.kongwang.targets=['巳'];assert.equal(evaluate(c,s).inactive,true)
+ s.custom1={enabled:true,targets:['丙','戊','己','庚']};const before=evaluate(c,s);s.kongwang.targets=['巳'];const after=evaluate(c,s);assert.equal(after.hasKongwang,true);assert.equal(after.counts.custom1,before.counts.custom1);assert.deepEqual(after.hours.map(h=>h.found.filter(id=>id!=='kongwang')),before.hours.map(h=>h.found.filter(id=>id!=='kongwang')))
 })
 test('noon solar-boundary rule and supported date edges',()=>{
  const spring=termsForYear(2026).find(t=>t.offset===0)!
@@ -53,11 +53,11 @@ test('noon solar-boundary rule and supported date edges',()=>{
  assert.throws(()=>contextForDate(date('1900-12-31')))
 })
 
-test('upcoming dates include endpoints, retain inactive matches and agree with day details across DST',()=>{
+test('upcoming dates include endpoints, retain Kongwang encounters and agree with day details across DST',()=>{
  const s=emptySettings();s.zone='America/Detroit';s.selections.tiande={enabled:true,targets:['丙']};s.selections.kongwang={enabled:true,targets:['巳']}
  const rows=upcomingMatches('2026-10-22','2026-11-02',s)
  assert.equal(rows.length,12);assert.equal(rows[0].date.getDate(),22);assert.equal(rows.at(-1)!.date.getDate(),2)
- assert.equal(rows[0].result.inactive,true)
+ assert.equal(rows[0].result.hasKongwang,true)
  for(const row of rows)assert.deepEqual(row.result,evaluate(contextForDate(row.date,s.zone),s.selections))
  assert.equal(upcomingMatches('2024-02-28','2024-03-01',emptySettings()).length,0)
  assert.equal(upcomingMatches('2100-12-31','2100-12-31',s).length>=0,true)

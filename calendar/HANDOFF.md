@@ -4,6 +4,15 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Kongwang moderates without cancellation
+
+Owner requested retaining each Shensha's nature/color when 空亡 occurs. Removed
+blanket inactive styling and renamed the engine flag to hasKongwang. All matches,
+repeat counts, hour eligibility and manual strengths remain. 空亡 is gray; other
+items retain positive/negative/custom colors. Help and hidden future date-search
+copy now describe coexistence, not cancellation. No numerical weakening is applied.
+Regression checks verify preserved counts/hours and distinct colors with 空亡.
+
 ### Health Calendar badge styling
 
 Owner supplied Health Calendar screenshot and requested its Shensha format/styles.

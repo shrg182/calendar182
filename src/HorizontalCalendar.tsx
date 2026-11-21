@@ -30,5 +30,5 @@ export function HorizontalCalendar({view,date,selected,today,settings,note,onDat
 }
 function MatchPreview({date,settings}:{date:Date;settings:ShenshaSettings}){
  const result=useMemo(()=>evaluate(contextForDate(date,settings.zone),settings.selections),[date,settings]);const found=items.filter(([id])=>result.counts[id]>0)
- return <div className="week-matches">{found.map(([id,name])=><span key={id} className={`summary-badge effect-${effectFor(id,settings)} strength-${settings.selections[id].origin||'unclassified'} ${result.inactive&&id!=='kongwang'?'inactive':''}`}>{name}</span>)}</div>
+ return <div className="week-matches">{found.map(([id,name])=><span key={id} className={`summary-badge effect-${effectFor(id,settings)} strength-${settings.selections[id].origin||'unclassified'} `}>{name}</span>)}</div>
 }

@@ -18,6 +18,8 @@ const {chromium,webkit}=require(process.env.PLAYWRIGHT_PATH||'playwright');
  assert.match(await page.locator('[data-pillar-scope=day] [data-shensha=custom1]').getAttribute('class'),/strength-yun/);
  await page.getByLabel('Daily note',{exact:true}).fill('Unsaved note retained through Shensha settings');await page.getByRole('button',{name:'Settings',exact:true}).click();
  const kw=picker('空亡');await kw.locator('summary').click();await kw.getByRole('checkbox',{name:'Enable 空亡',exact:true}).check();await kw.getByRole('checkbox',{name:'巳',exact:true}).check();await kw.getByLabel('空亡 strength',{exact:true}).selectOption('ming');await page.getByRole('button',{name:'Save Shensha selections'}).click();await day();assert.ok(await page.locator('[data-shensha=kongwang]').count()>0);assert.equal(await page.getByLabel('Daily note',{exact:true}).inputValue(),'Unsaved note retained through Shensha settings');
+ assert.equal(await page.locator('.shensha-day .inactive').count(),0);
+ const colors=await page.evaluate(()=>{const color=selector=>getComputedStyle(document.querySelector(selector)).color;return [color('[data-shensha=tiande]'),color('[data-shensha=custom1]'),color('[data-shensha=kongwang]')]});assert.equal(new Set(colors).size,3);
  const viewButtons=page.getByRole('group',{name:'Calendar view'});
  const todayKey=await page.evaluate(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`});
  const sunday=await page.evaluate(()=>{const d=new Date();d.setDate(d.getDate()-d.getDay());return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`});

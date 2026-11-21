@@ -96,7 +96,7 @@ export function evaluate(context:ReturnType<typeof contextForDate>,selections:Se
  const groups={year:matches(context.year.pillar,selections),month:matches(context.month.pillar,selections),day:matches(context.day.pillar,selections)}
  const counts=Object.fromEntries(items.map(([id])=>[id,Object.values(groups).filter(found=>found.includes(id)).length])) as Record<ItemId,number>
  const hours=context.hours.map(slot=>({...slot,found:matches(slot.pillar,selections).filter(id=>counts[id]>=2)}))
- return {groups,counts,hours,inactive:counts.kongwang>0}
+ return {groups,counts,hours,hasKongwang:counts.kongwang>0}
 }
 
 // Civil-date iteration preserves dates across daylight-saving transitions.
