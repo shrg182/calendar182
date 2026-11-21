@@ -10,7 +10,9 @@ export const items=[
  ['custom1','自定义①','custom'],['custom2','自定义②','custom'],['custom3','自定义③','custom'],
 ] as const
 export type ItemId=typeof items[number][0]
-export type Selections=Record<ItemId,{enabled:boolean;targets:string[];origin?:'ming'|'yun'|'unclassified'}>
+export type Selections=Record<ItemId,{enabled:boolean;targets:string[];origin?:'ming'|'yun'|'unclassified';effect?:'positive'|'negative'|'neutral'}>
+export function effectFor(id:ItemId,settings:ShenshaSettings){if(id==='kongwang')return 'neutral';const kind=items.find(item=>item[0]===id)![2];return kind==='custom'?(settings.selections[id].effect||'unclassified'):kind==='shen'?'positive':'negative'}
+export const strengthLabels={ming:'命',yun:'运',unclassified:'未选'}
 export const birthScopes=['year','month','day','hour'] as const
 export type BirthPillars=Record<typeof birthScopes[number],string>
 export interface ShenshaSettings {version:1;zone:string;selections:Selections;birth:BirthPillars}
@@ -46,7 +48,8 @@ export function validateSettings(raw:unknown):ShenshaSettings{
  for(const [id] of items){const entry=value.selections[id]
   if(!entry||typeof entry.enabled!=='boolean'||!Array.isArray(entry.targets)||entry.targets.length>82||entry.targets.some(t=>typeof t!=='string'||!targetsFor(id).includes(t))||(entry.enabled&&!entry.targets.length))throw Error(`Choose valid targets for ${id}.`)
   if(entry.origin!==undefined&&!['ming','yun','unclassified'].includes(entry.origin))throw Error('Choose 命 or 运, or leave not chosen.');
-  result.selections[id]={enabled:entry.enabled,targets:[...new Set(entry.targets)],...(entry.origin?{origin:entry.origin}:{})}
+  if(entry.effect!==undefined&&!['positive','negative','neutral'].includes(entry.effect))throw Error('Choose a valid effect.');
+  result.selections[id]={...(entry.effect?{effect:entry.effect}:{}),enabled:entry.enabled,targets:[...new Set(entry.targets)],...(entry.origin?{origin:entry.origin}:{})}
  }
  return result
 }

@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {contextForDate,dayPillar,emptySettings,evaluate,items,matches,targetsFor,validateSettings,termsForYear,noon,upcomingMatches,classifyTarget,encounteredTargets} from '../src/shensha.ts'
+import {contextForDate,dayPillar,emptySettings,evaluate,items,matches,targetsFor,validateSettings,termsForYear,noon,upcomingMatches,classifyTarget,encounteredTargets,effectFor} from '../src/shensha.ts'
 const date=(key:string)=>{const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d,12)}
 test('reference pillar example and civil-midnight split Zi hours',()=>{
  const c=contextForDate(date('2026-10-22'),'America/Detroit')
@@ -81,3 +81,9 @@ test('birth targets classify independently, with exact pair matching and incompl
 })
 
 test('manual strength applies to every target and overrides preserved birth data',()=>{const s=emptySettings();s.birth.year='甲子';s.selections.custom1={enabled:true,targets:['甲','子'],origin:'yun'};assert.deepEqual(encounteredTargets('甲子','custom1',s).map(t=>t.origin),['yun','yun']);assert.deepEqual(validateSettings(s).birth,s.birth);assert.equal(validateSettings(s).selections.custom1.origin,'yun');assert.throws(()=>validateSettings({...s,selections:{...s.selections,custom1:{...s.selections.custom1,origin:'invalid'}}}))})
+
+test('effect colors preserve custom choices and treat Kongwang as neutral',()=>{
+ const s=emptySettings();assert.equal(effectFor('kongwang',s),'neutral');assert.equal(effectFor('tiande',s),'positive');assert.equal(effectFor('yangren',s),'negative');assert.equal(effectFor('custom1',s),'unclassified');
+ s.selections.custom1={enabled:true,targets:['甲'],origin:'yun',effect:'negative'};assert.equal(effectFor('custom1',validateSettings(s)),'negative');
+ s.selections.custom1.effect='neutral';assert.equal(effectFor('custom1',validateSettings(s)),'neutral');assert.throws(()=>validateSettings({...s,selections:{...s.selections,custom1:{...s.selections.custom1,effect:'invalid'}}}))
+})

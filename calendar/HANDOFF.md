@@ -4,6 +4,28 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Current: seven equal columns and compact Day results
+
+Week button opens today's Sunday–Saturday week. Horizontal movement then shifts
+one day at a time while keeping seven consecutive dates visible. Seven equal
+columns use the available screen height on phone/tablet/desktop; contents scroll
+vertically within columns. There is no detail panel beneath Week. Date buttons
+open Day view. Day notes precede Shensha; unmatched pillar sections and entirely
+empty Shensha results are omitted. Routine explanatory text moved to Settings
+Help; operational save/error messages remain.
+
+Colors now represent positive (green), negative (red), neutral/Kongwang (gray),
+with dark/bold 命 and softer 运. Compact 命/运 labels remain. Custom items have
+an optional positive/negative/neutral effect choice, preserved on save; missing
+choices are outlined. Kongwang remains visible and neutral while its suppression
+grays other matches. Birth settings/date search remain hidden.
+
+29 unit tests, typecheck/lint and Chrome/WebKit checks cover Sunday-first entry,
+seven equal columns at 320/390/820/1280 widths, day taps, note-first ordering,
+hidden empty Shensha, drafts, swipes, boundaries and saved settings. Mobile
+screenshots reviewed. Publishing to main and the computer static bundle, with
+no service restart or note-store changes.
+
 ### Current: horizontal Week/Day navigation
 
 Owner requested horizontal navigation in place of vertical lists. Week now uses
