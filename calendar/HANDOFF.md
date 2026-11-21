@@ -4,6 +4,15 @@ Updated: 2026-11-20 (America/Detroit). Resume from the current checkpoint below;
 
 ## Current stopping point — read first
 
+### Health Calendar badge styling
+
+Owner supplied Health Calendar screenshot and requested its Shensha format/styles.
+Read original styles.css (read-only) and adopted 1px currentColor outlines, 8px
+rounded corners, 6px/10px padding, and its pale green/red/gray palette for Week
+and Day badges. Mobile padding adapts to seven columns. Manual strength styling,
+Kongwang suppression, hidden category labels and all matching rules are retained.
+No Health Calendar files changed. Published to both Calendar182 deployments.
+
 ### Display-only label removal
 
 Owner requested removing 命/运 names from Shensha displays. Week badges show
